@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>재난안전 - 대피 경로 찾기 | 7 안전좌의 주인은 누구인가</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="../css/game.css">
+    <link rel="stylesheet" href="../css/chatbot.css">
+    <style>
+        /* Specific override for Chatbot Orientation (Same as Life Safety) */
+        #chatbotCharacter .character-image {
+            transform: scaleX(1) !important;
+        }
+
+        #chatbotCharacter:hover .character-image {
+            transform: translateY(-5px) scaleX(1) !important;
+        }
+    </style>
+    <style>
+        .maze-wrapper {
+            max-width: 400px;
+            margin: 0 auto;
+        }
+
+        .maze-info {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 15px;
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+        }
+
+        .maze-legend {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 0.85rem;
+        }
+
+        .maze-board {
+            display: grid;
+            gap: 2px;
+            background: #333;
+            padding: 4px;
+            border-radius: 10px;
+            border: 4px solid var(--ground-brown);
+        }
+
+        .maze-cell {
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.3rem;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+
+        .maze-cell.wall {
+            background: var(--brick-red);
+        }
+
+        .maze-cell.path {
+            background: #f0f0f0;
+        }
+
+        .maze-cell.fire {
+            background: #ff6b35;
+            animation: fireFlicker 0.5s infinite;
+        }
+
+        .maze-cell.exit {
+            background: var(--pipe-green);
+        }
+
+        .maze-cell.player {
+            background: var(--sky-blue);
+        }
+
+        @keyframes fireFlicker {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.7;
+            }
+        }
+
+        .maze-board {
+            display: grid;
+            gap: 2px;
+            background: #333;
+            padding: 10px;
+            border-radius: 8px;
+            border: 4px solid #8B4513;
+            margin: 0 auto;
+            width: fit-content;
+        }
+
+        .maze-controls {
+            display: grid;
+            grid-template-columns: repeat(3, 60px);
+            gap: 8px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .control-btn {
+            width: 60px;
+            height: 60px;
+            font-size: 1.5rem;
+            background: linear-gradient(180deg, var(--block-yellow) 0%, var(--block-orange) 100%);
+            border: 3px solid var(--ground-brown);
+            border-radius: 10px;
+            cursor: pointer;
+            box-shadow: 0 4px 0 var(--ground-dark);
+            transition: all 0.1s;
+        }
+
+        .control-btn:active {
+            transform: translateY(4px);
+            box-shadow: 0 0 0 var(--ground-dark);
+        }
+
+        .control-btn.up {
+            grid-column: 2;
+        }
+
+        .control-btn.down {
+            grid-column: 2;
+            grid-row: 2;
+        }
+
+        .control-btn.left {
+            grid-column: 1;
+            grid-row: 2;
+        }
+
+        .control-btn.right {
+            grid-column: 3;
+            grid-row: 2;
+        }
+
+        .tip-box {
+            margin-top: 20px;
+            padding: 15px;
+            background: #fff3cd;
+            border-radius: 10px;
+            border-left: 4px solid #ffc107;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="game-container">
+        <header class="game-header">
+            <div class="game-title-section">
+                <button class="back-btn" onclick="location.href='../index.html'">←</button>
+                <h1 class="game-title"><span class="game-emoji">🔥</span> 재난안전</h1>
+            </div>
+            <div class="game-stats">
+                <div class="stat-item">
+                    <span class="stat-icon">🏃</span>
+                    <span class="stat-value" id="moves">0</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-icon">🎯</span>
+                    <span class="stat-value" id="level">1/3</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-icon">⭐</span>
+                    <span class="stat-value" id="score">0</span>
+                </div>
+            </div>
+        </header>
+
+        <main class="game-content">
+            <div class="game-board">
+                <div class="game-board-header">
+                    <h2 class="game-board-title">🚨 불이야! 안전하게 대피하자!</h2>
+                </div>
+                <div class="game-board-content">
+                    <div class="start-screen" id="startScreen">
+                        <div class="start-emoji">🔥</div>
+                        <h2 class="start-title">대피 경로 찾기</h2>
+                        <p class="start-description">
+                            화재가 발생했어요! 불과 벽을 피해<br>
+                            비상구(🚪)까지 안전하게 대피하세요!
+                        </p>
+                        <button class="start-btn" id="startBtn">게임 시작!</button>
+                    </div>
+
+                    <div class="maze-wrapper hidden" id="gameArea">
+                        <div class="maze-info">
+                            <div class="maze-legend">
+                                <span class="legend-item">🧒 나</span>
+                                <span class="legend-item">🔥 불</span>
+                                <span class="legend-item">🧱 벽</span>
+                                <span class="legend-item">🚪 출구</span>
+                            </div>
+                        </div>
+                        <div class="maze-board" id="mazeBoard"></div>
+                        <div class="maze-controls">
+                            <button class="control-btn up" data-dir="up">⬆️</button>
+                            <button class="control-btn left" data-dir="left">⬅️</button>
+                            <button class="control-btn down" data-dir="down">⬇️</button>
+                            <button class="control-btn right" data-dir="right">➡️</button>
+                        </div>
+                        <div class="tip-box" id="tipBox">💡 팁: 낮은 자세로 연기를 피하고, 비상구 표시를 따라가세요!</div>
+                    </div>
+
+                    <div class="game-over-screen" id="gameOverScreen">
+                        <h2 class="game-over-title" id="resultTitle">게임 종료!</h2>
+                        <p class="game-over-score" id="resultScore"></p>
+                        <div class="game-over-stars" id="resultStars"></div>
+                        <div class="game-over-buttons">
+                            <button class="btn btn-primary btn-pixel" onclick="location.reload()">다시하기</button>
+                            <button class="btn btn-gold btn-pixel" onclick="location.href='../index.html'">돌아가기</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="../js/main.js"></script>
+    <script src="../js/chatbot.js"></script>
+    <script src="../js/survey.js"></script>
+    <script>
+        // Maze levels: 0=path, 1=wall, 2=fire, 3=exit, 4=player start
+        const levels = [
+            {
+                map: [
+                    [4, 0, 1, 0, 0, 0, 0],
+                    [1, 0, 1, 0, 1, 1, 0],
+                    [0, 0, 0, 0, 2, 0, 0],
+                    [0, 1, 1, 1, 1, 0, 1],
+                    [0, 0, 2, 0, 0, 0, 0],
+                    [1, 0, 1, 1, 1, 0, 1],
+                    [0, 0, 0, 0, 0, 0, 3]
+                ],
+                tip: "💡 팁: 불(🔥)을 피해 우회하세요!"
+            },
+            {
+                map: [
+                    [0, 0, 2, 0, 0, 0, 4],
+                    [0, 1, 1, 1, 0, 1, 0],
+                    [0, 0, 0, 2, 0, 1, 0],
+                    [1, 1, 0, 1, 0, 0, 0],
+                    [0, 0, 0, 1, 2, 1, 0],
+                    [0, 1, 0, 0, 0, 0, 0],
+                    [3, 0, 1, 1, 0, 1, 0]
+                ],
+                tip: "💡 팁: 엘리베이터 대신 계단을 이용하세요!"
+            },
+            {
+                map: [
+                    [0, 1, 0, 0, 2, 0, 4],
+                    [0, 1, 0, 1, 1, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 1],
+                    [1, 0, 1, 1, 1, 0, 2],
+                    [0, 0, 2, 0, 0, 0, 0],
+                    [0, 1, 1, 0, 1, 1, 0],
+                    [3, 0, 0, 0, 2, 0, 0]
+                ],
+                tip: "💡 팁: 문을 열기 전 손등으로 온도를 확인하세요!"
+            }
+        ];
+
+        const state = {
+            level: 0,
+            playerPos: { x: 0, y: 0 },
+            moves: 0,
+            score: 0,
+            isPlaying: false
+        };
+
+        const el = {
+            startScreen: document.getElementById('startScreen'),
+            gameArea: document.getElementById('gameArea'),
+            mazeBoard: document.getElementById('mazeBoard'),
+            moves: document.getElementById('moves'),
+            level: document.getElementById('level'),
+            score: document.getElementById('score'),
+            tipBox: document.getElementById('tipBox'),
+            gameOverScreen: document.getElementById('gameOverScreen'),
+            resultTitle: document.getElementById('resultTitle'),
+            resultScore: document.getElementById('resultScore'),
+            resultStars: document.getElementById('resultStars')
+        };
+
+        // Initialize Chatbot immediately so it's visible on start screen
+        const chatbot = new Chatbot('disaster_safety');
+
+        document.getElementById('startBtn').addEventListener('click', startGame);
+        document.querySelectorAll('.control-btn').forEach(btn => {
+            btn.addEventListener('click', () => move(btn.dataset.dir));
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (!state.isPlaying) return;
+            switch (e.key) {
+                case 'ArrowUp': move('up'); break;
+                case 'ArrowDown': move('down'); break;
+                case 'ArrowLeft': move('left'); break;
+                case 'ArrowRight': move('right'); break;
+            }
+        });
+
+        function startGame() {
+            state.isPlaying = true;
+            el.startScreen.classList.add('hidden');
+            el.gameArea.classList.remove('hidden');
+            loadLevel();
+        }
+
+        function loadLevel() {
+            const lvl = levels[state.level];
+            const map = lvl.map;
+            const size = map.length;
+
+            el.mazeBoard.style.gridTemplateColumns = `repeat(${size}, 40px)`;
+            el.mazeBoard.innerHTML = '';
+            el.tipBox.textContent = lvl.tip;
+
+            for (let y = 0; y < size; y++) {
+                for (let x = 0; x < size; x++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'maze-cell';
+                    cell.dataset.x = x;
+                    cell.dataset.y = y;
+
+                    switch (map[y][x]) {
+                        case 1: cell.classList.add('wall'); cell.textContent = '🧱'; break;
+                        case 2: cell.classList.add('fire'); cell.textContent = '🔥'; break;
+                        case 3: cell.classList.add('exit'); cell.textContent = '🚪'; break;
+                        case 4:
+                            state.playerPos = { x, y };
+                            cell.classList.add('player');
+                            cell.textContent = '🧒';
+                            break;
+                        default: cell.classList.add('path');
+                    }
+
+                    el.mazeBoard.appendChild(cell);
+                }
+            }
+
+            updateUI();
+        }
+
+        function move(dir) {
+            if (!state.isPlaying) return;
+
+            const { x, y } = state.playerPos;
+            const lvl = levels[state.level];
+            const size = lvl.map.length;
+            let nx = x, ny = y;
+
+            switch (dir) {
+                case 'up': ny--; break;
+                case 'down': ny++; break;
+                case 'left': nx--; break;
+                case 'right': nx++; break;
+            }
+
+            if (nx < 0 || nx >= size || ny < 0 || ny >= size) return;
+
+            const targetCell = lvl.map[ny][nx];
+            if (targetCell === 1) return; // Wall
+
+            // Move player
+            const oldCell = el.mazeBoard.querySelector(`[data-x="${x}"][data-y="${y}"]`);
+            const newCell = el.mazeBoard.querySelector(`[data-x="${nx}"][data-y="${ny}"]`);
+
+            oldCell.classList.remove('player');
+            oldCell.textContent = '';
+
+            state.playerPos = { x: nx, y: ny };
+            state.moves++;
+
+            if (targetCell === 2) { // Fire!
+                showMessage('🔥 불에 닿았어요! 다시 시도!', false);
+                setTimeout(loadLevel, 1000);
+                return;
+            }
+
+            newCell.classList.add('player');
+            newCell.textContent = '🧒';
+
+            if (targetCell === 3) { // Exit!
+                state.score += Math.max(500 - state.moves * 10, 100);
+                showMessage('🎉 탈출 성공!', true);
+
+                setTimeout(() => {
+                    state.level++;
+                    state.moves = 0;
+                    if (state.level < levels.length) {
+                        loadLevel();
+                    } else {
+                        endGame(true);
+                    }
+                }, 1500);
+            }
+
+            updateUI();
+        }
+
+        function showMessage(text, success) {
+            const msg = document.createElement('div');
+            msg.className = `feedback-message ${success ? 'success' : 'error'}`;
+            msg.textContent = text;
+            document.body.appendChild(msg);
+            setTimeout(() => msg.remove(), 1500);
+        }
+
+        function updateUI() {
+            el.moves.textContent = state.moves;
+            el.level.textContent = `${state.level + 1}/${levels.length}`;
+            el.score.textContent = state.score;
+        }
+
+        function endGame(won) {
+            state.isPlaying = false;
+            const stars = won ? 3 : 0;
+
+            el.resultTitle.textContent = won ? '🎉 모든 층에서 탈출 성공!' : '💪 다음에 더 잘할 수 있어요!';
+            el.resultTitle.style.color = won ? '#2ECC71' : '#FCBC00';
+            el.resultScore.textContent = `클리어 레벨: ${state.level}/${levels.length} | 점수: ${state.score}점`;
+            el.resultStars.textContent = '⭐'.repeat(stars) + '☆'.repeat(3 - stars);
+
+            el.gameOverScreen.classList.add('active');
+
+            if (typeof ProgressManager !== 'undefined') {
+                ProgressManager.completeGame('disaster_safety', stars);
+            }
+
+            setTimeout(() => {
+                new SurveyModal('disaster_safety', '재난안전', () => { });
+                document.querySelector('.modal-overlay').classList.add('active');
+            }, 1500);
+        }
+    </script>
+</body>
+
+</html>

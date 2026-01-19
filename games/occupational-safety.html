@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>직업안전 - 보호구 매칭 | 7 안전좌의 주인은 누구인가</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="../css/game.css">
+    <link rel="stylesheet" href="../css/chatbot.css">
+    <style>
+        .matching-game {
+            max-width: 700px;
+            margin: 0 auto;
+        }
+
+        .scenario-display {
+            text-align: center;
+            padding: 20px;
+            background: linear-gradient(135deg, #795548 0%, #5D4037 100%);
+            border-radius: 15px;
+            color: white;
+            margin-bottom: 20px;
+        }
+
+        .worker-icon {
+            font-size: 5rem;
+            margin-bottom: 10px;
+        }
+
+        .scenario-title {
+            font-size: 1.3rem;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .scenario-desc {
+            font-size: 0.95rem;
+            opacity: 0.9;
+        }
+
+        .equipment-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .equipment-item {
+            aspect-ratio: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: white;
+            border: 3px solid #ddd;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 2.5rem;
+            padding: 10px;
+        }
+
+        .equipment-item:hover {
+            border-color: var(--coin-gold);
+            transform: scale(1.05);
+        }
+
+        .equipment-item.selected {
+            border-color: var(--pipe-green);
+            background: #e8f5e9;
+            box-shadow: 0 0 15px rgba(0, 168, 0, 0.3);
+        }
+
+        .equipment-item.correct {
+            border-color: #28a745;
+            background: #d4edda;
+            animation: pulse 0.5s;
+        }
+
+        .equipment-item.wrong {
+            border-color: #dc3545;
+            background: #f8d7da;
+            animation: shake 0.5s;
+        }
+
+        .equipment-name {
+            font-size: 0.75rem;
+            margin-top: 5px;
+            text-align: center;
+            color: #666;
+        }
+
+        .selected-equipment {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+            min-height: 60px;
+            padding: 15px;
+            background: #f5f5f5;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .selected-item {
+            background: var(--pipe-green);
+            color: white;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .remove-btn {
+            background: rgba(255, 255, 255, 0.3);
+            border: none;
+            color: white;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 0.8rem;
+        }
+
+        .submit-section {
+            text-align: center;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="game-container">
+        <header class="game-header">
+            <div class="game-title-section">
+                <button class="back-btn" onclick="location.href='../index.html'">←</button>
+                <h1 class="game-title"><span class="game-emoji">👷</span> 직업안전</h1>
+            </div>
+            <div class="game-stats">
+                <div class="stat-item">
+                    <span class="stat-icon">📋</span>
+                    <span class="stat-value" id="progress">1/4</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-icon">✅</span>
+                    <span class="stat-value" id="correct">0</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-icon">⭐</span>
+                    <span class="stat-value" id="score">0</span>
+                </div>
+            </div>
+        </header>
+
+        <main class="game-content">
+            <div class="game-board">
+                <div class="game-board-header">
+                    <h2 class="game-board-title">👷 알맞은 보호구를 선택하세요!</h2>
+                </div>
+                <div class="game-board-content">
+                    <div class="start-screen" id="startScreen">
+                        <div class="start-emoji">👷</div>
+                        <h2 class="start-title">보호구 매칭 게임</h2>
+                        <p class="start-description">
+                            각 작업 상황에 맞는 안전 보호구를 선택하세요!<br>
+                            올바른 보호구로 작업자를 보호해주세요!
+                        </p>
+                        <button class="start-btn" id="startBtn">게임 시작!</button>
+                    </div>
+
+                    <div class="matching-game hidden" id="gameArea">
+                        <div class="scenario-display" id="scenarioDisplay">
+                            <div class="worker-icon" id="workerIcon">👷</div>
+                            <div class="scenario-title" id="scenarioTitle"></div>
+                            <div class="scenario-desc" id="scenarioDesc"></div>
+                        </div>
+
+                        <div class="equipment-grid" id="equipmentGrid"></div>
+
+                        <div class="selected-equipment" id="selectedEquipment">
+                            <span style="color:#999;">선택한 보호구가 여기에 표시됩니다</span>
+                        </div>
+
+                        <div class="submit-section">
+                            <button class="btn btn-primary btn-pixel" id="submitBtn">제출하기</button>
+                        </div>
+
+                        <div id="feedback" style="margin-top:20px; text-align:center;"></div>
+                    </div>
+
+                    <div class="game-over-screen" id="gameOverScreen">
+                        <h2 class="game-over-title" id="resultTitle">게임 종료!</h2>
+                        <p class="game-over-score" id="resultScore"></p>
+                        <div class="game-over-stars" id="resultStars"></div>
+                        <div class="game-over-buttons">
+                            <button class="btn btn-primary btn-pixel" onclick="location.reload()">다시하기</button>
+                            <button class="btn btn-gold btn-pixel" onclick="location.href='../index.html'">돌아가기</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="../js/main.js"></script>
+    <script src="../js/chatbot.js"></script>
+    <script src="../js/survey.js"></script>
+    <script>
+        const allEquipment = [
+            { id: 'helmet', emoji: '⛑️', name: '안전모' },
+            { id: 'goggles', emoji: '🥽', name: '보안경' },
+            { id: 'mask', emoji: '😷', name: '방진마스크' },
+            { id: 'gloves', emoji: '🧤', name: '안전장갑' },
+            { id: 'boots', emoji: '🥾', name: '안전화' },
+            { id: 'vest', emoji: '🦺', name: '안전조끼' },
+            { id: 'earmuffs', emoji: '🎧', name: '귀마개' },
+            { id: 'welding', emoji: '🔲', name: '용접마스크' }
+        ];
+
+        const scenarios = [
+            {
+                icon: '🔨',
+                title: '건설 현장 작업',
+                desc: '높은 곳에서 건설 작업을 합니다. 무거운 물건이 떨어질 수 있어요.',
+                required: ['helmet', 'boots', 'vest', 'gloves'],
+                explanation: '건설 현장에서는 안전모(낙하물), 안전화(못, 무거운 물건), 안전조끼(가시성), 장갑(손 보호)이 필수예요!'
+            },
+            {
+                icon: '⚡',
+                title: '용접 작업',
+                desc: '금속을 용접합니다. 강한 빛과 불꽃이 튑니다.',
+                required: ['welding', 'gloves', 'boots'],
+                explanation: '용접 시 용접마스크(눈 보호), 가죽장갑(화상 방지), 안전화(불꽃 방지)가 필수예요!'
+            },
+            {
+                icon: '🧪',
+                title: '화학물질 취급',
+                desc: '실험실에서 화학약품을 다룹니다. 유해 증기가 발생할 수 있어요.',
+                required: ['goggles', 'gloves', 'mask'],
+                explanation: '화학물질 작업 시 보안경(눈 보호), 내화학 장갑, 방독마스크(유해가스)가 필수예요!'
+            },
+            {
+                icon: '🔊',
+                title: '소음 현장 작업',
+                desc: '큰 기계가 돌아가는 공장에서 일합니다. 소음이 매우 큽니다.',
+                required: ['helmet', 'earmuffs', 'boots'],
+                explanation: '소음 현장에서는 귀마개(청력 보호), 안전모, 안전화가 필수예요! 85dB 이상은 청력 손상 위험!'
+            }
+        ];
+
+        const state = {
+            current: 0,
+            selected: [],
+            correct: 0,
+            score: 0
+        };
+
+        const el = {
+            startScreen: document.getElementById('startScreen'),
+            gameArea: document.getElementById('gameArea'),
+            workerIcon: document.getElementById('workerIcon'),
+            scenarioTitle: document.getElementById('scenarioTitle'),
+            scenarioDesc: document.getElementById('scenarioDesc'),
+            equipmentGrid: document.getElementById('equipmentGrid'),
+            selectedEquipment: document.getElementById('selectedEquipment'),
+            submitBtn: document.getElementById('submitBtn'),
+            feedback: document.getElementById('feedback'),
+            progress: document.getElementById('progress'),
+            correct: document.getElementById('correct'),
+            score: document.getElementById('score'),
+            gameOverScreen: document.getElementById('gameOverScreen'),
+            resultTitle: document.getElementById('resultTitle'),
+            resultScore: document.getElementById('resultScore'),
+            resultStars: document.getElementById('resultStars')
+        };
+
+        // Initialize Chatbot immediately so it's visible on start screen
+        const chatbot = new Chatbot('occupational_safety');
+
+        document.getElementById('startBtn').addEventListener('click', startGame);
+        el.submitBtn.addEventListener('click', checkAnswer);
+
+        function startGame() {
+            el.startScreen.classList.add('hidden');
+            el.gameArea.classList.remove('hidden');
+            showScenario();
+        }
+
+        function showScenario() {
+            const s = scenarios[state.current];
+            state.selected = [];
+
+            el.workerIcon.textContent = s.icon;
+            el.scenarioTitle.textContent = s.title;
+            el.scenarioDesc.textContent = s.desc;
+            el.feedback.innerHTML = '';
+            el.submitBtn.disabled = false;
+
+            renderEquipment();
+            updateSelectedDisplay();
+            updateUI();
+        }
+
+        function renderEquipment() {
+            el.equipmentGrid.innerHTML = '';
+
+            allEquipment.forEach(eq => {
+                const item = document.createElement('div');
+                item.className = 'equipment-item';
+                item.dataset.id = eq.id;
+                item.innerHTML = `${eq.emoji}<span class="equipment-name">${eq.name}</span>`;
+                item.addEventListener('click', () => toggleEquipment(eq));
+                el.equipmentGrid.appendChild(item);
+            });
+        }
+
+        function toggleEquipment(eq) {
+            const index = state.selected.findIndex(s => s.id === eq.id);
+            if (index >= 0) {
+                state.selected.splice(index, 1);
+            } else {
+                state.selected.push(eq);
+            }
+
+            document.querySelectorAll('.equipment-item').forEach(item => {
+                item.classList.toggle('selected', state.selected.some(s => s.id === item.dataset.id));
+            });
+
+            updateSelectedDisplay();
+        }
+
+        function updateSelectedDisplay() {
+            if (state.selected.length === 0) {
+                el.selectedEquipment.innerHTML = '<span style="color:#999;">선택한 보호구가 여기에 표시됩니다</span>';
+            } else {
+                el.selectedEquipment.innerHTML = state.selected.map(eq => `
+          <div class="selected-item">
+            ${eq.emoji} ${eq.name}
+            <button class="remove-btn" onclick="removeEquipment('${eq.id}')">✕</button>
+          </div>
+        `).join('');
+            }
+        }
+
+        window.removeEquipment = function (id) {
+            state.selected = state.selected.filter(s => s.id !== id);
+            document.querySelectorAll('.equipment-item').forEach(item => {
+                item.classList.toggle('selected', state.selected.some(s => s.id === item.dataset.id));
+            });
+            updateSelectedDisplay();
+        };
+
+        function checkAnswer() {
+            const s = scenarios[state.current];
+            const selectedIds = state.selected.map(eq => eq.id).sort();
+            const requiredIds = s.required.sort();
+
+            const isCorrect = selectedIds.length === requiredIds.length &&
+                selectedIds.every((id, i) => id === requiredIds[i]);
+
+            el.submitBtn.disabled = true;
+
+            // Highlight correct/wrong
+            document.querySelectorAll('.equipment-item').forEach(item => {
+                const id = item.dataset.id;
+                const isRequired = s.required.includes(id);
+                const isSelected = selectedIds.includes(id);
+
+                if (isRequired) item.classList.add('correct');
+                if (isSelected && !isRequired) item.classList.add('wrong');
+            });
+
+            if (isCorrect) {
+                state.correct++;
+                state.score += 250;
+                el.feedback.innerHTML = `<div style="color:#28a745; font-weight:bold;">✅ 정답! ${s.explanation}</div>`;
+            } else {
+                el.feedback.innerHTML = `<div style="color:#dc3545; font-weight:bold;">❌ 아쉬워요! ${s.explanation}</div>`;
+            }
+
+            updateUI();
+
+            setTimeout(() => {
+                state.current++;
+                if (state.current < scenarios.length) {
+                    showScenario();
+                } else {
+                    endGame();
+                }
+            }, 3000);
+        }
+
+        function updateUI() {
+            el.progress.textContent = `${state.current + 1}/${scenarios.length}`;
+            el.correct.textContent = state.correct;
+            el.score.textContent = state.score;
+        }
+
+        function endGame() {
+            const stars = state.correct >= 4 ? 3 : 0;
+
+            el.resultTitle.textContent = stars >= 2 ? '🎉 안전 전문가!' : '💪 더 연습해봐요!';
+            el.resultTitle.style.color = stars >= 2 ? '#2ECC71' : '#FCBC00';
+            el.resultScore.textContent = `정답: ${state.correct}/${scenarios.length} | 점수: ${state.score}점`;
+            el.resultStars.textContent = '⭐'.repeat(stars) + '☆'.repeat(3 - stars);
+
+            el.gameOverScreen.classList.add('active');
+
+            if (typeof ProgressManager !== 'undefined') {
+                ProgressManager.completeGame('occupational_safety', stars);
+            }
+
+            setTimeout(() => {
+                new SurveyModal('occupational_safety', '직업안전', () => { });
+                document.querySelector('.modal-overlay').classList.add('active');
+            }, 1500);
+        }
+    </script>
+</body>
+
+</html>

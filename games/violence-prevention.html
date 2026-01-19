@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>폭력예방 - 상황대처 퀴즈 | 7 안전좌의 주인은 누구인가</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="../css/game.css">
+    <link rel="stylesheet" href="../css/chatbot.css">
+    <style>
+        /* Specific override for Chatbot Orientation */
+        #chatbotCharacter .character-image {
+            transform: scaleX(1) !important;
+        }
+
+        #chatbotCharacter:hover .character-image {
+            transform: translateY(-5px) scaleX(1) !important;
+        }
+
+        /* Match image font and sizes - Refined Design */
+        body {
+            font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+
+        .game-board-header {
+            background: #f7d770 !important;
+            /* Bright Yellow from image */
+            padding: 20px !important;
+        }
+
+        .game-board-title {
+            font-size: 1.5rem !important;
+            /* Matching image header size */
+            color: #333 !important;
+        }
+
+        .quiz-question {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+            color: white !important;
+            border-radius: 20px !important;
+            padding: 40px 30px !important;
+            border: none !important;
+            text-align: center;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
+            margin-bottom: 30px !important;
+        }
+
+        .quiz-question-number {
+            color: rgba(255, 255, 255, 0.8) !important;
+            font-size: 1.1rem !important;
+            font-weight: 500;
+            margin-bottom: 15px;
+        }
+
+        .quiz-question-text {
+            font-size: 1.4rem !important;
+            font-weight: 700 !important;
+            line-height: 1.6 !important;
+            word-break: keep-all;
+        }
+
+        .quiz-option {
+            font-size: 1.2rem !important;
+            font-weight: 500 !important;
+            padding: 20px 25px !important;
+            background: #ffffff !important;
+            border: 1px solid #e0e0e0 !important;
+            border-radius: 15px !important;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05) !important;
+            transition: all 0.2s ease !important;
+            text-align: left !important;
+            color: #333 !important;
+        }
+
+        .quiz-option:hover {
+            transform: translateY(-3px) !important;
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1) !important;
+            border-color: #667eea !important;
+        }
+
+        .quiz-option.correct {
+            background: #e8f5e9 !important;
+            border-color: #4caf50 !important;
+            color: #2e7d32 !important;
+        }
+
+        .quiz-option.wrong {
+            background: #ffebee !important;
+            border-color: #f44336 !important;
+            color: #c62828 !important;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="game-container">
+        <header class="game-header">
+            <div class="game-title-section">
+                <button class="back-btn" onclick="location.href='../index.html'">←</button>
+                <h1 class="game-title"><span class="game-emoji">🛡️</span> 폭력예방 및 신변보호</h1>
+            </div>
+            <div class="game-stats">
+                <div class="stat-item">
+                    <span class="stat-icon">❓</span>
+                    <span class="stat-value" id="progress">1/5</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-icon">✅</span>
+                    <span class="stat-value" id="correct">0</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-icon">⭐</span>
+                    <span class="stat-value" id="score">0</span>
+                </div>
+            </div>
+        </header>
+
+        <main class="game-content">
+            <div class="game-board">
+                <div class="game-board-header">
+                    <h2 class="game-board-title">🛡️ 위험 상황! 어떻게 대처할까요?</h2>
+                </div>
+                <div class="game-board-content">
+                    <div class="start-screen" id="startScreen">
+                        <div class="start-emoji">🛡️</div>
+                        <h2 class="start-title">상황 대처 퀴즈</h2>
+                        <p class="start-description">
+                            다양한 위험 상황이 나옵니다.<br>
+                            가장 올바른 대처 방법을 선택하세요!
+                        </p>
+                        <button class="start-btn" id="startBtn">게임 시작!</button>
+                    </div>
+
+                    <div class="quiz-container hidden" id="gameArea">
+                        <div class="quiz-question" id="questionBox">
+                            <div class="quiz-question-number" id="questionNum">문제 1</div>
+                            <p class="quiz-question-text" id="questionText"></p>
+                        </div>
+                        <div class="quiz-options" id="options"></div>
+                        <div id="feedback" style="text-align:center; margin-top:20px; min-height:60px;"></div>
+                    </div>
+
+                    <div class="game-over-screen" id="gameOverScreen">
+                        <h2 class="game-over-title" id="resultTitle">게임 종료!</h2>
+                        <p class="game-over-score" id="resultScore"></p>
+                        <div class="game-over-stars" id="resultStars"></div>
+                        <div class="game-over-buttons">
+                            <button class="btn btn-primary btn-pixel" onclick="location.reload()">다시하기</button>
+                            <button class="btn btn-gold btn-pixel" onclick="location.href='../index.html'">돌아가기</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="../js/main.js"></script>
+    <script src="../js/chatbot.js"></script>
+    <script src="../js/survey.js"></script>
+    <script>
+        const quizData = [
+            {
+                question: "학교에서 친구들이 다른 친구를 괴롭히는 것을 목격했어요. 어떻게 해야 할까요?",
+                options: [
+                    "무시하고 지나간다",
+                    "같이 괴롭힌다",
+                    "선생님이나 어른에게 알린다",
+                    "SNS에 올린다"
+                ],
+                correct: 2,
+                explanation: "✅ 정답! 학교 폭력을 목격하면 반드시 선생님이나 어른에게 알려야 해요. 방관자가 되면 안 돼요!"
+            },
+            {
+                question: "낯선 어른이 '엄마가 아프셔서 너를 데리러 왔어'라고 하며 따라오라고 해요. 어떻게 해야 할까요?",
+                options: [
+                    "걱정되니까 따라간다",
+                    "'싫어요!'라고 크게 말하고 가까운 가게나 어른에게 도움을 요청한다",
+                    "조용히 따라간다",
+                    "그 자리에서 울기만 한다"
+                ],
+                correct: 1,
+                explanation: "✅ 정답! 낯선 사람은 절대 따라가면 안 돼요. 크게 거절하고 도움을 요청하세요!"
+            },
+            {
+                question: "친구가 계속 때리면서 장난이라고 해요. 어떻게 해야 할까요?",
+                options: [
+                    "참는다. 장난이니까",
+                    "똑같이 때린다",
+                    "'하지 마, 싫어!'라고 분명히 말하고, 계속되면 어른에게 알린다",
+                    "친구를 피해 혼자 다닌다"
+                ],
+                correct: 2,
+                explanation: "✅ 정답! 싫은 건 싫다고 분명히 말해야 해요. 계속되면 반드시 어른에게 알리세요!"
+            },
+            {
+                question: "온라인에서 모르는 사람이 만나자고 해요. 어떻게 해야 할까요?",
+                options: [
+                    "재밌을 것 같으니 만난다",
+                    "친구들만 데리고 만난다",
+                    "절대 만나지 않고, 부모님이나 선생님께 알린다",
+                    "일단 대화를 더 해본다"
+                ],
+                correct: 2,
+                explanation: "✅ 정답! 온라인에서 만난 낯선 사람은 절대 만나면 안 돼요. 어른에게 알리세요!"
+            },
+            {
+                question: "누군가 내 몸을 불편하게 만지려고 해요. 어떻게 해야 할까요?",
+                options: [
+                    "어른이니까 참는다",
+                    "'안 돼요!'라고 크게 외치고 그 자리를 피한 뒤 믿을 수 있는 어른에게 알린다",
+                    "아무에게도 말하지 않는다",
+                    "내가 잘못한 건가 생각한다"
+                ],
+                correct: 1,
+                explanation: "✅ 정답! 내 몸은 내가 지켜요. 싫으면 크게 거절하고 반드시 믿을 수 있는 어른에게 알리세요!"
+            }
+        ];
+
+        const state = {
+            currentQuestion: 0,
+            correctAnswers: 0,
+            score: 0,
+            answered: false
+        };
+
+        const el = {
+            startScreen: document.getElementById('startScreen'),
+            gameArea: document.getElementById('gameArea'),
+            questionNum: document.getElementById('questionNum'),
+            questionText: document.getElementById('questionText'),
+            options: document.getElementById('options'),
+            feedback: document.getElementById('feedback'),
+            progress: document.getElementById('progress'),
+            correct: document.getElementById('correct'),
+            score: document.getElementById('score'),
+            gameOverScreen: document.getElementById('gameOverScreen'),
+            resultTitle: document.getElementById('resultTitle'),
+            resultScore: document.getElementById('resultScore'),
+            resultStars: document.getElementById('resultStars')
+        };
+
+        // Initialize Chatbot immediately so it's visible on start screen
+        const chatbot = new Chatbot('violence_prevention');
+
+        document.getElementById('startBtn').addEventListener('click', startGame);
+
+        function startGame() {
+            el.startScreen.classList.add('hidden');
+            el.gameArea.classList.remove('hidden');
+            showQuestion();
+        }
+
+        function showQuestion() {
+            const q = quizData[state.currentQuestion];
+            state.answered = false;
+
+            el.questionNum.textContent = `문제 ${state.currentQuestion + 1}`;
+            el.questionText.textContent = q.question;
+            el.feedback.innerHTML = '';
+            el.options.innerHTML = '';
+
+            q.options.forEach((opt, i) => {
+                const btn = document.createElement('button');
+                btn.className = 'quiz-option';
+                btn.textContent = opt;
+                btn.addEventListener('click', () => selectAnswer(i));
+                el.options.appendChild(btn);
+            });
+
+            updateUI();
+        }
+
+        function selectAnswer(index) {
+            if (state.answered) return;
+            state.answered = true;
+
+            const q = quizData[state.currentQuestion];
+            const buttons = el.options.querySelectorAll('.quiz-option');
+
+            buttons.forEach((btn, i) => {
+                btn.classList.add('disabled');
+                if (i === q.correct) btn.classList.add('correct');
+                if (i === index && i !== q.correct) btn.classList.add('wrong');
+            });
+
+            if (index === q.correct) {
+                state.correctAnswers++;
+                state.score += 200;
+                el.feedback.innerHTML = `<div style="color: #2ECC71; font-weight: bold;">${q.explanation}</div>`;
+            } else {
+                el.feedback.innerHTML = `<div style="color: #E74C3C; font-weight: bold;">❌ 틀렸어요! ${q.explanation}</div>`;
+            }
+
+            updateUI();
+
+            setTimeout(() => {
+                state.currentQuestion++;
+                if (state.currentQuestion < quizData.length) {
+                    showQuestion();
+                } else {
+                    endGame();
+                }
+            }, 2500);
+        }
+
+        function updateUI() {
+            el.progress.textContent = `${state.currentQuestion + 1}/${quizData.length}`;
+            el.correct.textContent = state.correctAnswers;
+            el.score.textContent = state.score;
+        }
+
+        function endGame() {
+            const stars = state.correctAnswers >= 4 ? 3 : 0;
+
+            el.resultTitle.textContent = stars >= 2 ? '🎉 훌륭해요!' : '💪 다음엔 더 잘할 수 있어요!';
+            el.resultTitle.style.color = stars >= 2 ? '#2ECC71' : '#FCBC00';
+            el.resultScore.textContent = `정답: ${state.correctAnswers}/${quizData.length} | 점수: ${state.score}점`;
+            el.resultStars.textContent = '⭐'.repeat(stars) + '☆'.repeat(3 - stars);
+
+            el.gameOverScreen.classList.add('active');
+
+            if (typeof ProgressManager !== 'undefined') {
+                ProgressManager.completeGame('violence_prevention', stars);
+            }
+
+            setTimeout(() => {
+                new SurveyModal('violence_prevention', '폭력예방 및 신변보호', () => { });
+                document.querySelector('.modal-overlay').classList.add('active');
+            }, 1500);
+        }
+    </script>
+</body>
+
+</html>

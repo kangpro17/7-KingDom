@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>생활안전 - 위험요소 찾기 | 7 안전좌의 주인은 누구인가</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="../css/game.css">
+    <link rel="stylesheet" href="../css/chatbot.css">
+    <style>
+        /* Specific override for Life Safety Chatbot Orientation */
+        #chatbotCharacter .character-image {
+            transform: scaleX(1) !important;
+            /* Flip to face Right (or away from center depending on base) */
+        }
+
+        #chatbotCharacter:hover .character-image {
+            transform: translateY(-5px) scaleX(1) !important;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="game-container">
+        <header class="game-header">
+            <div class="game-title-section">
+                <button class="back-btn" onclick="location.href='../index.html'">←</button>
+                <h1 class="game-title"><span class="game-emoji">🏠</span> 생활안전</h1>
+            </div>
+            <div class="game-stats">
+                <div class="stat-item">
+                    <span class="stat-icon">⏱️</span>
+                    <span class="stat-value" id="timer">60</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-icon">🎯</span>
+                    <span class="stat-value" id="found">0/6</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-icon">⭐</span>
+                    <span class="stat-value" id="score">0</span>
+                </div>
+            </div>
+        </header>
+
+        <main class="game-content">
+            <div class="game-board">
+                <div class="game-board-header">
+                    <h2 class="game-board-title">🔍 방 안의 위험 요소를 찾아라!</h2>
+                </div>
+                <div class="game-board-content">
+                    <!-- Start Screen -->
+                    <div class="start-screen" id="startScreen">
+                        <div class="start-emoji">🏠</div>
+                        <h2 class="start-title">위험요소 찾기</h2>
+                        <p class="start-description">
+                            집 안에 숨어있는 6가지 위험 요소를 찾아 클릭하세요!<br>
+                            제한 시간 60초 안에 모두 찾으면 승리!
+                        </p>
+                        <button class="start-btn" id="startBtn">게임 시작!</button>
+                    </div>
+
+                    <!-- Game Area -->
+                    <div class="find-items-container hidden" id="gameArea">
+                        <div class="find-items-scene" id="scene"
+                            style="background: linear-gradient(180deg, #FFF8E7 0%, #FFE4B5 100%);">
+                            <!-- Room elements will be drawn here -->
+                        </div>
+                        <p class="items-found-counter">
+                            찾은 위험 요소: <span id="foundCount">0</span> / 6
+                        </p>
+                    </div>
+
+                    <!-- Game Over Screen -->
+                    <div class="game-over-screen" id="gameOverScreen">
+                        <h2 class="game-over-title" id="resultTitle">게임 종료!</h2>
+                        <p class="game-over-score" id="resultScore"></p>
+                        <div class="game-over-stars" id="resultStars"></div>
+                        <div class="game-over-buttons">
+                            <button class="btn btn-primary btn-pixel" onclick="location.reload()">다시하기</button>
+                            <button class="btn btn-gold btn-pixel" onclick="location.href='../index.html'">돌아가기</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="../js/main.js"></script>
+    <script src="../js/chatbot.js"></script>
+    <script src="../js/survey.js"></script>
+    <script>
+        // Game State
+        const gameState = {
+            isPlaying: false,
+            timeLeft: 60,
+            foundItems: [],
+            score: 0,
+            timerInterval: null
+        };
+
+        // Danger items with positions (percentage-based) - matched to new background image
+        const dangerItems = [
+            { id: 1, name: '콘센트 과부하', x: 8, y: 82, hint: '전기 콘센트가 검게 그을려 있어요!' },
+            { id: 2, name: '미끄러운 바닥', x: 65, y: 90, hint: '바닥에 물이 고여 있어 미끄러워요!' },
+            { id: 3, name: '날카로운 칼', x: 92, y: 68, hint: '칼이 위험하게 세워져 있어요!' },
+            { id: 4, name: '깨진 창문', x: 88, y: 25, hint: '유리창이 깨져 있어 위험해요!' },
+            { id: 5, name: '주방 화재', x: 12, y: 55, hint: '프라이팬에서 불이 솟아오르고 있어요!' },
+            { id: 6, name: '계단 장애물', x: 50, y: 65, hint: '계단에 곰인형이 놓여 있어 걸려 넘어질 수 있어요!' }
+        ];
+
+        // DOM Elements
+        const elements = {
+            startScreen: document.getElementById('startScreen'),
+            startBtn: document.getElementById('startBtn'),
+            gameArea: document.getElementById('gameArea'),
+            scene: document.getElementById('scene'),
+            timer: document.getElementById('timer'),
+            found: document.getElementById('found'),
+            score: document.getElementById('score'),
+            foundCount: document.getElementById('foundCount'),
+            gameOverScreen: document.getElementById('gameOverScreen'),
+            resultTitle: document.getElementById('resultTitle'),
+            resultScore: document.getElementById('resultScore'),
+            resultStars: document.getElementById('resultStars')
+        };
+
+        // Initialize game
+        function init() {
+            elements.startBtn.addEventListener('click', startGame);
+            new Chatbot('life_safety');
+        }
+
+        // Start game
+        function startGame() {
+            gameState.isPlaying = true;
+            gameState.timeLeft = 60;
+            gameState.foundItems = [];
+            gameState.score = 0;
+
+            elements.startScreen.classList.add('hidden');
+            elements.gameArea.classList.remove('hidden');
+
+            createRoom();
+            createHotspots();
+            startTimer();
+        }
+
+        // Create room visual
+        function createRoom() {
+            elements.scene.innerHTML = `
+                <div style="position: absolute; width: 100%; height: 100%; pointer-events: none;">
+                    <img src="../images/life_safety_bg.png" alt="Life Safety Room" style="width: 100%; height: 100%; object-fit: fill;">
+                </div>
+            `;
+        }
+
+        // Create clickable hotspots
+        function createHotspots() {
+            dangerItems.forEach(item => {
+                const hotspot = document.createElement('div');
+                hotspot.className = 'find-item-hotspot';
+                hotspot.style.left = `${item.x}%`;
+                hotspot.style.top = `${item.y}%`;
+                hotspot.dataset.id = item.id;
+                hotspot.title = item.hint;
+
+                hotspot.addEventListener('click', () => handleItemClick(item, hotspot));
+                elements.scene.appendChild(hotspot);
+            });
+        }
+
+        // Handle item click
+        function handleItemClick(item, hotspot) {
+            if (gameState.foundItems.includes(item.id)) return;
+
+            gameState.foundItems.push(item.id);
+            gameState.score += 100 + Math.floor(gameState.timeLeft * 2);
+
+            hotspot.classList.add('found');
+            hotspot.innerHTML = `<span style="font-size: 1.5rem;">✓</span>`;
+
+            updateUI();
+            showFeedback(item.name, true);
+
+            if (gameState.foundItems.length === dangerItems.length) {
+                endGame(true);
+            }
+        }
+
+        // Show feedback
+        function showFeedback(text, success) {
+            const feedback = document.createElement('div');
+            feedback.className = `feedback-message ${success ? 'success' : 'error'}`;
+            feedback.textContent = success ? `✓ ${text} 발견!` : text;
+            document.body.appendChild(feedback);
+
+            setTimeout(() => feedback.remove(), 1500);
+        }
+
+        // Update UI
+        function updateUI() {
+            elements.found.textContent = `${gameState.foundItems.length}/${dangerItems.length}`;
+            elements.foundCount.textContent = gameState.foundItems.length;
+            elements.score.textContent = gameState.score;
+        }
+
+        // Timer
+        function startTimer() {
+            gameState.timerInterval = setInterval(() => {
+                gameState.timeLeft--;
+                elements.timer.textContent = gameState.timeLeft;
+
+                if (gameState.timeLeft <= 10) {
+                    elements.timer.style.color = '#ff4444';
+                }
+
+                if (gameState.timeLeft <= 0) {
+                    endGame(false);
+                }
+            }, 1000);
+        }
+
+        // End game
+        function endGame(won) {
+            gameState.isPlaying = false;
+            clearInterval(gameState.timerInterval);
+
+            const stars = won ? 3 : 0;
+
+            elements.resultTitle.textContent = won ? '🎉 축하합니다!' : '⏰ 시간 종료!';
+            elements.resultTitle.style.color = won ? '#2ECC71' : '#FCBC00';
+            elements.resultScore.textContent = `점수: ${gameState.score}점 | 찾은 위험요소: ${gameState.foundItems.length}/${dangerItems.length}`;
+            elements.resultStars.textContent = '⭐'.repeat(stars) + '☆'.repeat(3 - stars);
+
+            elements.gameOverScreen.classList.add('active');
+
+            // Save progress
+            if (typeof ProgressManager !== 'undefined') {
+                ProgressManager.completeGame('life_safety', stars);
+            }
+
+            // Show survey
+            setTimeout(() => {
+                new SurveyModal('life_safety', '생활안전', () => { });
+                document.querySelector('.modal-overlay').classList.add('active');
+            }, 1500);
+        }
+
+        // Initialize
+        init();
+    </script>
+</body>
+
+</html>

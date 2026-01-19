@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>응급처치 - CPR 리듬 게임 | 7 안전좌의 주인은 누구인가</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="../css/game.css">
+    <link rel="stylesheet" href="../css/chatbot.css">
+    <style>
+        /* Specific override for Chatbot Orientation (Same as Life Safety) */
+        #chatbotCharacter .character-image {
+            transform: scaleX(1) !important;
+        }
+
+        #chatbotCharacter:hover .character-image {
+            transform: translateY(-5px) scaleX(1) !important;
+        }
+    </style>
+    <style>
+        .cpr-game {
+            max-width: 500px;
+            margin: 0 auto;
+            text-align: center;
+        }
+
+        .patient-display {
+            background: linear-gradient(135deg, #E91E63 0%, #C2185B 100%);
+            border-radius: 20px;
+            padding: 30px;
+            color: white;
+            margin-bottom: 20px;
+        }
+
+        .patient-icon {
+            font-size: 5rem;
+            margin-bottom: 10px;
+        }
+
+        .patient-status {
+            font-size: 1.1rem;
+        }
+
+        .heart-container {
+            position: relative;
+            height: 200px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .big-heart {
+            font-size: 8rem;
+            cursor: pointer;
+            transition: transform 0.1s;
+            user-select: none;
+        }
+
+        .big-heart:active {
+            transform: scale(0.85);
+        }
+
+        .big-heart.beat {
+            animation: heartPump 0.15s ease;
+        }
+
+        @keyframes heartPump {
+            0% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(0.8);
+            }
+
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        .rhythm-bar {
+            height: 60px;
+            background: #333;
+            border-radius: 30px;
+            position: relative;
+            overflow: hidden;
+            margin: 20px 0;
+            border: 4px solid var(--ground-brown);
+        }
+
+        .rhythm-target {
+            position: absolute;
+            top: 10px;
+            bottom: 10px;
+            left: 50%;
+            width: 60px;
+            transform: translateX(-50%);
+            border: 3px dashed #00ff00;
+            border-radius: 10px;
+            background: rgba(0, 255, 0, 0.1);
+        }
+
+        .rhythm-note {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 30px;
+            height: 30px;
+            background: var(--danger-red);
+            border-radius: 50%;
+            transition: left 0.05s linear;
+        }
+
+        .feedback-display {
+            font-family: var(--font-pixel);
+            font-size: 1.2rem;
+            min-height: 40px;
+            margin: 15px 0;
+        }
+
+        .feedback-display.perfect {
+            color: #00ff00;
+        }
+
+        .feedback-display.good {
+            color: #ffff00;
+        }
+
+        .feedback-display.miss {
+            color: #ff0000;
+        }
+
+        .combo-display {
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        .combo-display strong {
+            color: var(--coin-gold);
+            font-size: 1.2rem;
+        }
+
+        .cpr-info {
+            background: #fff3cd;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+            border-left: 4px solid #ffc107;
+            text-align: left;
+            font-size: 0.9rem;
+        }
+
+        .cpr-info h4 {
+            margin-bottom: 10px;
+            color: #856404;
+        }
+
+        .cpr-info ul {
+            margin-left: 20px;
+        }
+
+        .cpr-info li {
+            margin-bottom: 5px;
+        }
+
+        .press-instruction {
+            margin-top: 15px;
+            font-size: 1rem;
+            color: #666;
+            animation: pulse 1s infinite;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="game-container">
+        <header class="game-header">
+            <div class="game-title-section">
+                <button class="back-btn" onclick="location.href='../index.html'">←</button>
+                <h1 class="game-title"><span class="game-emoji">❤️</span> 응급처치</h1>
+            </div>
+            <div class="game-stats">
+                <div class="stat-item">
+                    <span class="stat-icon">💓</span>
+                    <span class="stat-value" id="bpm">0 BPM</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-icon">🎯</span>
+                    <span class="stat-value" id="accuracy">0%</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-icon">⭐</span>
+                    <span class="stat-value" id="score">0</span>
+                </div>
+            </div>
+        </header>
+
+        <main class="game-content">
+            <div class="game-board">
+                <div class="game-board-header">
+                    <h2 class="game-board-title">💓 심폐소생술(CPR)로 생명을 구하세요!</h2>
+                </div>
+                <div class="game-board-content">
+                    <div class="start-screen" id="startScreen">
+                        <div class="start-emoji">❤️</div>
+                        <h2 class="start-title">CPR 리듬 게임</h2>
+                        <p class="start-description">
+                            환자가 쓰러졌어요! 심폐소생술로 생명을 구하세요!<br>
+                            1분에 100~120회 리듬으로 가슴을 압박하세요!
+                        </p>
+                        <button class="start-btn" id="startBtn">게임 시작!</button>
+                    </div>
+
+                    <div class="cpr-game hidden" id="gameArea">
+                        <div class="patient-display">
+                            <div class="patient-icon">🧑‍🦲</div>
+                            <div class="patient-status" id="patientStatus">환자가 쓰러져 있습니다!</div>
+                        </div>
+
+                        <div class="rhythm-bar" id="rhythmBar">
+                            <div class="rhythm-target"></div>
+                        </div>
+
+                        <div class="heart-container">
+                            <div class="big-heart" id="heartBtn">❤️</div>
+                        </div>
+
+                        <div class="feedback-display" id="feedbackDisplay"></div>
+
+                        <div class="combo-display">
+                            콤보: <strong id="combo">0</strong> | 남은 시간: <strong id="timeLeft">30</strong>초
+                        </div>
+
+                        <p class="press-instruction">❤️ 하트를 클릭하거나 스페이스바를 누르세요!</p>
+
+                        <div class="cpr-info">
+                            <h4>💡 CPR 요령</h4>
+                            <ul>
+                                <li>1분에 <strong>100~120회</strong> 속도로 압박</li>
+                                <li>압박 깊이: 약 <strong>5cm</strong></li>
+                                <li>압박 후 가슴이 완전히 올라오도록</li>
+                                <li>노래 "상어가족" 리듬을 생각해요!</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="game-over-screen" id="gameOverScreen">
+                        <h2 class="game-over-title" id="resultTitle">게임 종료!</h2>
+                        <p class="game-over-score" id="resultScore"></p>
+                        <div class="game-over-stars" id="resultStars"></div>
+                        <div class="game-over-buttons">
+                            <button class="btn btn-primary btn-pixel" onclick="location.reload()">다시하기</button>
+                            <button class="btn btn-gold btn-pixel" onclick="location.href='../index.html'">돌아가기</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="../js/main.js"></script>
+    <script src="../js/chatbot.js"></script>
+    <script src="../js/survey.js"></script>
+    <script>
+        const state = {
+            isPlaying: false,
+            score: 0,
+            combo: 0,
+            maxCombo: 0,
+            hits: { perfect: 0, good: 0, miss: 0 },
+            pressCount: 0,
+            timeLeft: 30,
+            lastPressTime: 0,
+            bpmHistory: [],
+            notePosition: -30,
+            noteInterval: null,
+            timerInterval: null
+        };
+
+        const el = {
+            startScreen: document.getElementById('startScreen'),
+            gameArea: document.getElementById('gameArea'),
+            heartBtn: document.getElementById('heartBtn'),
+            rhythmBar: document.getElementById('rhythmBar'),
+            feedbackDisplay: document.getElementById('feedbackDisplay'),
+            combo: document.getElementById('combo'),
+            timeLeft: document.getElementById('timeLeft'),
+            bpm: document.getElementById('bpm'),
+            accuracy: document.getElementById('accuracy'),
+            score: document.getElementById('score'),
+            patientStatus: document.getElementById('patientStatus'),
+            gameOverScreen: document.getElementById('gameOverScreen'),
+            resultTitle: document.getElementById('resultTitle'),
+            resultScore: document.getElementById('resultScore'),
+            resultStars: document.getElementById('resultStars')
+        };
+
+        let note = null;
+
+        // Initialize Chatbot immediately so it's visible on start screen
+        const chatbot = new Chatbot('first_aid');
+
+        document.getElementById('startBtn').addEventListener('click', startGame);
+        el.heartBtn.addEventListener('click', pressHeart);
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space' && state.isPlaying) {
+                e.preventDefault();
+                pressHeart();
+            }
+        });
+
+        function startGame() {
+            state.isPlaying = true;
+            el.startScreen.classList.add('hidden');
+            el.gameArea.classList.remove('hidden');
+
+            // Create note
+            note = document.createElement('div');
+            note.className = 'rhythm-note';
+            note.style.left = '-30px';
+            el.rhythmBar.appendChild(note);
+
+            // Start note movement (100-120 BPM = 0.5-0.6 seconds per beat)
+            const barWidth = el.rhythmBar.offsetWidth;
+            const noteSpeed = barWidth / 60; // Cross bar in ~60 frames
+
+            state.noteInterval = setInterval(() => {
+                state.notePosition += noteSpeed;
+                if (state.notePosition > barWidth + 30) {
+                    state.notePosition = -30;
+                    // Missed note
+                    if (state.isPlaying) {
+                        miss();
+                    }
+                }
+                note.style.left = state.notePosition + 'px';
+            }, 16);
+
+            // Start timer
+            state.timerInterval = setInterval(() => {
+                state.timeLeft--;
+                el.timeLeft.textContent = state.timeLeft;
+
+                if (state.timeLeft <= 0) {
+                    endGame();
+                }
+            }, 1000);
+        }
+
+        function pressHeart() {
+            if (!state.isPlaying) return;
+
+            el.heartBtn.classList.remove('beat');
+            void el.heartBtn.offsetWidth;
+            el.heartBtn.classList.add('beat');
+
+            state.pressCount++;
+
+            // Calculate BPM
+            const now = Date.now();
+            if (state.lastPressTime > 0) {
+                const interval = now - state.lastPressTime;
+                const bpm = Math.round(60000 / interval);
+                state.bpmHistory.push(bpm);
+                if (state.bpmHistory.length > 5) state.bpmHistory.shift();
+
+                const avgBpm = Math.round(state.bpmHistory.reduce((a, b) => a + b, 0) / state.bpmHistory.length);
+                el.bpm.textContent = avgBpm + ' BPM';
+            }
+            state.lastPressTime = now;
+
+            // Check timing
+            const barWidth = el.rhythmBar.offsetWidth;
+            const targetCenter = barWidth / 2;
+            const noteCenter = state.notePosition + 15;
+            const distance = Math.abs(noteCenter - targetCenter);
+
+            if (distance < 20) {
+                perfect();
+            } else if (distance < 50) {
+                good();
+            } else {
+                miss();
+            }
+
+            updateUI();
+        }
+
+        function perfect() {
+            state.hits.perfect++;
+            state.combo++;
+            state.score += 100 * (1 + state.combo * 0.1);
+            state.maxCombo = Math.max(state.maxCombo, state.combo);
+
+            showFeedback('PERFECT!', 'perfect');
+            state.notePosition = -30;
+        }
+
+        function good() {
+            state.hits.good++;
+            state.combo++;
+            state.score += 50 * (1 + state.combo * 0.1);
+            state.maxCombo = Math.max(state.maxCombo, state.combo);
+
+            showFeedback('GOOD!', 'good');
+            state.notePosition = -30;
+        }
+
+        function miss() {
+            state.hits.miss++;
+            state.combo = 0;
+
+            showFeedback('MISS', 'miss');
+        }
+
+        function showFeedback(text, type) {
+            el.feedbackDisplay.textContent = text;
+            el.feedbackDisplay.className = 'feedback-display ' + type;
+        }
+
+        function updateUI() {
+            el.combo.textContent = state.combo;
+            el.score.textContent = Math.round(state.score);
+
+            const total = state.hits.perfect + state.hits.good + state.hits.miss;
+            const accuracy = total > 0 ? Math.round((state.hits.perfect + state.hits.good * 0.5) / total * 100) : 0;
+            el.accuracy.textContent = accuracy + '%';
+
+            // Update patient status
+            if (state.combo >= 10) {
+                el.patientStatus.textContent = '💓 환자의 심장이 뛰기 시작해요!';
+            } else if (state.combo >= 5) {
+                el.patientStatus.textContent = '😌 환자가 반응하기 시작해요!';
+            }
+        }
+
+        function endGame() {
+            state.isPlaying = false;
+            clearInterval(state.noteInterval);
+            clearInterval(state.timerInterval);
+
+            const total = state.hits.perfect + state.hits.good + state.hits.miss;
+            const accuracy = total > 0 ? (state.hits.perfect + state.hits.good * 0.5) / total * 100 : 0;
+
+            const stars = accuracy >= 60 ? 3 : 0;
+
+            let message = '';
+            if (stars >= 3) {
+                message = '🎉 환자를 구했어요! 생명의 영웅!';
+            } else if (stars >= 2) {
+                message = '👍 잘했어요! 조금 더 연습해봐요!';
+            } else {
+                message = '💪 포기하지 말고 다시 도전!';
+            }
+
+            el.resultTitle.textContent = message;
+            el.resultTitle.style.color = stars >= 2 ? '#2ECC71' : '#FCBC00';
+            el.resultScore.textContent = `점수: ${Math.round(state.score)} | 정확도: ${Math.round(accuracy)}% | 최대 콤보: ${state.maxCombo}`;
+            el.resultStars.textContent = '⭐'.repeat(stars) + '☆'.repeat(3 - stars);
+
+            el.gameOverScreen.classList.add('active');
+
+            if (typeof ProgressManager !== 'undefined') {
+                ProgressManager.completeGame('first_aid', stars);
+            }
+
+            setTimeout(() => {
+                new SurveyModal('first_aid', '응급처치', () => { });
+                document.querySelector('.modal-overlay').classList.add('active');
+            }, 1500);
+        }
+    </script>
+</body>
+
+</html>

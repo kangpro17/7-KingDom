@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>교통안전 - 횡단보도 건너기 | 7 안전좌의 주인은 누구인가</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="../css/game.css">
+    <link rel="stylesheet" href="../css/chatbot.css">
+    <style>
+        .signal-panel {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-bottom: 20px;
+            align-items: flex-start;
+        }
+
+        /* Pedestrian Signal */
+        .pedestrian-signal {
+            width: 80px;
+            padding: 15px 10px;
+            background: #1a1a1a;
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            align-items: center;
+            border: 4px solid #333;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
+        }
+
+        .signal-label {
+            font-size: 0.75rem;
+            color: #888;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .ped-light {
+            width: 55px;
+            height: 55px;
+            border-radius: 8px;
+            background: #222;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            transition: all 0.3s;
+            border: 2px solid #444;
+        }
+
+        .ped-light.stop {
+            opacity: 0.3;
+        }
+
+        .ped-light.stop.active {
+            background: #ff4444;
+            box-shadow: 0 0 25px #ff4444;
+            opacity: 1;
+        }
+
+        .ped-light.walk {
+            opacity: 0.3;
+        }
+
+        .ped-light.walk.active {
+            background: #00cc00;
+            box-shadow: 0 0 25px #00cc00;
+            opacity: 1;
+        }
+
+        /* Vehicle Signal */
+        .vehicle-signal {
+            width: 50px;
+            padding: 12px 8px;
+            background: #1a1a1a;
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            align-items: center;
+            border: 3px solid #333;
+        }
+
+        .vehicle-light {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: #333;
+            transition: all 0.3s;
+        }
+
+        .vehicle-light.red.active {
+            background: #ff0000;
+            box-shadow: 0 0 15px #ff0000;
+        }
+
+        .vehicle-light.yellow.active {
+            background: #ffcc00;
+            box-shadow: 0 0 15px #ffcc00;
+        }
+
+        .vehicle-light.green.active {
+            background: #00ff00;
+            box-shadow: 0 0 15px #00ff00;
+        }
+
+        .road-scene {
+            width: 100%;
+            height: 320px;
+            background: #3a3a3a;
+            border-radius: 12px;
+            position: relative;
+            overflow: hidden;
+            border: 5px solid var(--ground-brown);
+        }
+
+        .sidewalk {
+            position: absolute;
+            left: 0;
+            right: 0;
+            height: 55px;
+            background: linear-gradient(180deg, #999 0%, #777 100%);
+        }
+
+        .sidewalk.top {
+            top: 0;
+            border-bottom: 3px solid #666;
+        }
+
+        .sidewalk.bottom {
+            bottom: 0;
+            border-top: 3px solid #666;
+        }
+
+        .road-line {
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            height: 5px;
+            transform: translateY(-50%);
+            background: repeating-linear-gradient(90deg, #fff 0, #fff 35px, transparent 35px, transparent 70px);
+        }
+
+        .stop-line {
+            position: absolute;
+            top: 55px;
+            left: 25%;
+            width: 8px;
+            height: calc(50% - 55px);
+            background: #fff;
+        }
+
+        .zebra-crossing {
+            position: absolute;
+            left: 50%;
+            top: 55px;
+            bottom: 55px;
+            width: 110px;
+            transform: translateX(-50%);
+            background: repeating-linear-gradient(0deg, #fff 0, #fff 18px, #3a3a3a 18px, #3a3a3a 36px);
+        }
+
+        .player-char {
+            position: absolute;
+            left: 50%;
+            bottom: 12px;
+            transform: translateX(-50%);
+            font-size: 3.5rem;
+            transition: bottom 0.6s ease;
+            z-index: 10;
+        }
+
+        .car {
+            position: absolute;
+            font-size: 3rem;
+            top: 50%;
+            transform: translateY(-50%) scaleX(-1);
+            transition: left 0.05s linear;
+            z-index: 5;
+        }
+
+        .car.stopped {
+            animation: carIdle 0.5s ease-in-out infinite;
+        }
+
+        @keyframes carIdle {
+
+            0%,
+            100% {
+                transform: translateY(-50%) scaleX(-1);
+            }
+
+            50% {
+                transform: translateY(-52%) scaleX(-1);
+            }
+        }
+
+        .instruction-text {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 1.2rem;
+            font-weight: 700;
+            padding: 18px;
+            background: rgba(0, 0, 0, 0.1);
+            border-radius: 12px;
+            min-height: 60px;
+        }
+
+        .cross-btn {
+            display: block;
+            margin: 20px auto;
+            font-family: var(--font-pixel);
+            font-size: 1.1rem;
+            padding: 18px 50px;
+        }
+
+        .danger-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 0, 0, 0.4);
+            display: none;
+            animation: dangerFlash 0.5s ease;
+            z-index: 20;
+        }
+
+        @keyframes dangerFlash {
+
+            0%,
+            100% {
+                opacity: 0;
+            }
+
+            50% {
+                opacity: 1;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="game-container">
+        <header class="game-header">
+            <div class="game-title-section">
+                <button class="back-btn" onclick="location.href='../index.html'">←</button>
+                <h1 class="game-title"><span class="game-emoji">🚦</span> 교통안전</h1>
+            </div>
+            <div class="game-stats">
+                <div class="stat-item">
+                    <span class="stat-icon">🚶</span>
+                    <span class="stat-value" id="crossings">0/5</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-icon">❤️</span>
+                    <span class="stat-value" id="lives">3</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-icon">⭐</span>
+                    <span class="stat-value" id="score">0</span>
+                </div>
+            </div>
+        </header>
+
+        <main class="game-content">
+            <div class="game-board">
+                <div class="game-board-header">
+                    <h2 class="game-board-title">🚸 안전하게 횡단보도를 건너자!</h2>
+                </div>
+                <div class="game-board-content">
+                    <div class="start-screen" id="startScreen">
+                        <div class="start-emoji">🚦</div>
+                        <h2 class="start-title">횡단보도 건너기</h2>
+                        <p class="start-description">
+                            보행자 신호등이 🚶 초록불일 때만 건너세요!<br>
+                            차가 정지선에 멈추는지 확인하고, 5번 성공하면 클리어!
+                        </p>
+                        <button class="start-btn" id="startBtn">게임 시작!</button>
+                    </div>
+
+                    <div class="road-container hidden" id="gameArea">
+                        <div class="signal-panel">
+                            <!-- Pedestrian Signal -->
+                            <div class="pedestrian-signal">
+                                <div class="signal-label">보행자</div>
+                                <div class="ped-light stop active" id="pedStop">🤚</div>
+                                <div class="ped-light walk" id="pedWalk">🚶</div>
+                            </div>
+                            <!-- Vehicle Signal -->
+                            <div class="vehicle-signal">
+                                <div class="signal-label">차량</div>
+                                <div class="vehicle-light red" id="vehRed"></div>
+                                <div class="vehicle-light yellow" id="vehYellow"></div>
+                                <div class="vehicle-light green active" id="vehGreen"></div>
+                            </div>
+                        </div>
+
+                        <div class="road-scene" id="roadScene">
+                            <div class="sidewalk top"></div>
+                            <div class="stop-line"></div>
+                            <div class="road-line"></div>
+                            <div class="zebra-crossing"></div>
+                            <div class="sidewalk bottom"></div>
+                            <div class="player-char" id="player">🧒</div>
+                            <div class="danger-overlay" id="dangerOverlay"></div>
+                        </div>
+
+                        <p class="instruction-text" id="instruction">🤚 빨간불! 멈추세요!</p>
+                        <button class="btn btn-primary cross-btn" id="crossBtn">🚶 건너기</button>
+                    </div>
+
+                    <div class="game-over-screen" id="gameOverScreen">
+                        <h2 class="game-over-title" id="resultTitle">게임 종료!</h2>
+                        <p class="game-over-score" id="resultScore"></p>
+                        <div class="game-over-stars" id="resultStars"></div>
+                        <div class="game-over-buttons">
+                            <button class="btn btn-primary btn-pixel" onclick="location.reload()">다시하기</button>
+                            <button class="btn btn-gold btn-pixel" onclick="location.href='../index.html'">돌아가기</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="../js/main.js"></script>
+    <script src="../js/chatbot.js"></script>
+    <script src="../js/survey.js"></script>
+    <script>
+        const STOP_LINE_X = 180; // Car stop position when pedestrian light is green
+        const CAR_MIN_SPEED = 2;
+        const CAR_MAX_SPEED = 3.5;
+
+        const state = {
+            lives: 3,
+            crossings: 0,
+            score: 0,
+            isPedestrianGreen: false,
+            carPosition: -80,
+            carSpeed: CAR_MIN_SPEED,
+            carInterval: null,
+            isPlaying: false,
+            carElement: null,
+            isCrossing: false
+        };
+
+        const elements = {
+            startScreen: document.getElementById('startScreen'),
+            gameArea: document.getElementById('gameArea'),
+            player: document.getElementById('player'),
+            crossBtn: document.getElementById('crossBtn'),
+            instruction: document.getElementById('instruction'),
+            pedStop: document.getElementById('pedStop'),
+            pedWalk: document.getElementById('pedWalk'),
+            vehRed: document.getElementById('vehRed'),
+            vehYellow: document.getElementById('vehYellow'),
+            vehGreen: document.getElementById('vehGreen'),
+            dangerOverlay: document.getElementById('dangerOverlay'),
+            roadScene: document.getElementById('roadScene'),
+            lives: document.getElementById('lives'),
+            crossings: document.getElementById('crossings'),
+            score: document.getElementById('score'),
+            gameOverScreen: document.getElementById('gameOverScreen'),
+            resultTitle: document.getElementById('resultTitle'),
+            resultScore: document.getElementById('resultScore'),
+            resultStars: document.getElementById('resultStars')
+        };
+
+        // Initialize Chatbot immediately so it's visible on start screen
+        const chatbot = new Chatbot('traffic_safety');
+
+        document.getElementById('startBtn').addEventListener('click', startGame);
+        elements.crossBtn.addEventListener('click', attemptCross);
+
+        function startGame() {
+            state.isPlaying = true;
+            elements.startScreen.classList.add('hidden');
+            elements.gameArea.classList.remove('hidden');
+
+            startTrafficCycle();
+            startCar();
+        }
+
+        function startTrafficCycle() {
+            const cycle = () => {
+                // Pedestrian RED, Vehicle GREEN
+                setPedestrianLight(false);
+                setTimeout(() => {
+                    // Vehicle YELLOW (warning)
+                    setVehicleYellow();
+                    setTimeout(() => {
+                        // Pedestrian GREEN, Vehicle RED
+                        setPedestrianLight(true);
+                        setTimeout(cycle, 5000); // Green for 5 seconds
+                    }, 2000); // Yellow for 2 seconds
+                }, 4000); // Red for 4 seconds
+            };
+            cycle();
+        }
+
+        function setPedestrianLight(isGreen) {
+            state.isPedestrianGreen = isGreen;
+
+            // Pedestrian signals
+            elements.pedStop.classList.toggle('active', !isGreen);
+            elements.pedWalk.classList.toggle('active', isGreen);
+
+            // Vehicle signals
+            elements.vehRed.classList.toggle('active', isGreen);
+            elements.vehYellow.classList.remove('active');
+            elements.vehGreen.classList.toggle('active', !isGreen);
+
+            if (isGreen) {
+                elements.instruction.textContent = '🚶 초록불! 좌우 확인 후 건너세요!';
+                elements.instruction.style.color = '#00aa00';
+            } else {
+                elements.instruction.textContent = '🤚 빨간불! 멈추세요!';
+                elements.instruction.style.color = '#cc0000';
+            }
+        }
+
+        function setVehicleYellow() {
+            elements.vehGreen.classList.remove('active');
+            elements.vehYellow.classList.add('active');
+            elements.instruction.textContent = '🟡 노란불! 준비하세요...';
+            elements.instruction.style.color = '#cc9900';
+        }
+
+        function startCar() {
+            state.carElement = document.createElement('div');
+            state.carElement.className = 'car';
+            state.carElement.textContent = '🚗';
+            state.carElement.style.left = '-80px';
+            elements.roadScene.appendChild(state.carElement);
+
+            state.carSpeed = CAR_MIN_SPEED + Math.random() * (CAR_MAX_SPEED - CAR_MIN_SPEED);
+
+            const moveCar = () => {
+                if (!state.isPlaying) return;
+
+                // Check if car should stop (pedestrian green and car approaching stop line)
+                if (state.isPedestrianGreen && state.carPosition < STOP_LINE_X && state.carPosition > -80) {
+                    // Slow down and stop at stop line
+                    if (state.carPosition < STOP_LINE_X - 20) {
+                        state.carPosition += state.carSpeed * 0.3; // Slow approach
+                    }
+                    state.carElement.classList.add('stopped');
+                } else {
+                    state.carElement.classList.remove('stopped');
+
+                    // Normal movement - always forward, never backward
+                    state.carPosition += state.carSpeed;
+
+                    // Reset when car exits screen
+                    if (state.carPosition > 700) {
+                        state.carPosition = -80;
+                        // Randomize speed within controlled range
+                        state.carSpeed = CAR_MIN_SPEED + Math.random() * (CAR_MAX_SPEED - CAR_MIN_SPEED);
+                    }
+                }
+
+                state.carElement.style.left = state.carPosition + 'px';
+            };
+
+            state.carInterval = setInterval(moveCar, 30);
+        }
+
+        function attemptCross() {
+            if (!state.isPlaying || state.isCrossing) return;
+
+            // Check if safe to cross
+            const carInCrossing = state.carPosition > 200 && state.carPosition < 450;
+
+            if (!state.isPedestrianGreen) {
+                // Tried to cross on red
+                fail('빨간불에 건너면 안 돼요!');
+            } else if (carInCrossing && !state.carElement.classList.contains('stopped')) {
+                // Car in crossing zone and not stopped
+                fail('차가 지나가고 있어요!');
+            } else {
+                // Safe to cross
+                success();
+            }
+        }
+
+        function success() {
+            state.isCrossing = true;
+            state.crossings++;
+            state.score += 200;
+
+            elements.player.style.bottom = '270px';
+            elements.instruction.textContent = '✅ 안전하게 건넜어요!';
+            elements.instruction.style.color = '#00aa00';
+            elements.crossBtn.disabled = true;
+
+            setTimeout(() => {
+                elements.player.style.bottom = '12px';
+                elements.crossBtn.disabled = false;
+                state.isCrossing = false;
+                updateUI();
+
+                if (state.crossings >= 5) {
+                    endGame(true);
+                }
+            }, 1500);
+        }
+
+        function fail(message) {
+            state.lives--;
+            elements.dangerOverlay.style.display = 'block';
+            elements.instruction.textContent = '❌ ' + message;
+            elements.instruction.style.color = '#cc0000';
+
+            setTimeout(() => {
+                elements.dangerOverlay.style.display = 'none';
+                updateUI();
+
+                if (state.lives <= 0) {
+                    endGame(false);
+                }
+            }, 1000);
+        }
+
+        function updateUI() {
+            elements.lives.textContent = state.lives;
+            elements.crossings.textContent = `${state.crossings}/5`;
+            elements.score.textContent = state.score;
+        }
+
+        function endGame(won) {
+            state.isPlaying = false;
+            clearInterval(state.carInterval);
+
+            const stars = won ? 3 : 0;
+
+            elements.resultTitle.textContent = won ? '🎉 교통안전 마스터!' : '💔 다음에 다시 도전!';
+            elements.resultTitle.style.color = won ? '#2ECC71' : '#E74C3C';
+            elements.resultScore.textContent = `점수: ${state.score}점`;
+            elements.resultStars.textContent = '⭐'.repeat(stars) + '☆'.repeat(3 - stars);
+
+            elements.gameOverScreen.classList.add('active');
+
+            if (typeof ProgressManager !== 'undefined') {
+                ProgressManager.completeGame('traffic_safety', stars);
+            }
+
+            setTimeout(() => {
+                new SurveyModal('traffic_safety', '교통안전', () => { });
+                document.querySelector('.modal-overlay').classList.add('active');
+            }, 1500);
+        }
+    </script>
+</body>
+
+</html>

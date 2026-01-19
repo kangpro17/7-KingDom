@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>약물/사이버 중독 예방 - 거절하기 | 7 안전좌의 주인은 누구인가</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="../css/game.css">
+    <link rel="stylesheet" href="../css/chatbot.css">
+    <style>
+        /* Specific override for Chatbot Orientation */
+        #chatbotCharacter .character-image {
+            transform: scaleX(1) !important;
+        }
+
+        #chatbotCharacter:hover .character-image {
+            transform: translateY(-5px) scaleX(1) !important;
+        }
+
+        /* Match image font and sizes - Refined Design */
+        body {
+            font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+
+        .game-board-header {
+            background: #f7d770 !important;
+            /* Bright Yellow from image */
+            padding: 20px !important;
+        }
+
+        .game-board-title {
+            font-size: 1.5rem !important;
+            /* Matching image header size */
+            color: #333 !important;
+        }
+
+        .scenario-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 20px;
+            padding: 40px 30px;
+            color: white;
+            text-align: center;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
+        }
+
+        .scenario-emoji {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            display: block;
+        }
+
+        .scenario-speaker {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            margin-bottom: 15px;
+            font-weight: 500;
+        }
+
+        .scenario-text {
+            font-size: 1.4rem;
+            font-weight: 700;
+            line-height: 1.6;
+            word-break: keep-all;
+        }
+
+        .response-options {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .response-btn {
+            padding: 20px 25px;
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 15px;
+            cursor: pointer;
+            font-size: 1.2rem;
+            font-weight: 500;
+            text-align: left;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            color: #333;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        }
+
+        .response-btn:hover {
+            border-color: #667eea;
+            transform: translateY(-3px);
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .response-btn.correct {
+            background: #e8f5e9;
+            border-color: #4caf50;
+            color: #2e7d32;
+        }
+
+        .response-btn.wrong {
+            background: #ffebee;
+            border-color: #f44336;
+            color: #c62828;
+        }
+
+        .response-icon {
+            font-size: 1.6rem;
+        }
+
+        .result-explanation {
+            margin-top: 25px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 15px;
+            border-left: 5px solid #4caf50;
+            font-size: 1.1rem;
+            line-height: 1.6;
+            color: #444;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="game-container">
+        <header class="game-header">
+            <div class="game-title-section">
+                <button class="back-btn" onclick="location.href='../index.html'">←</button>
+                <h1 class="game-title"><span class="game-emoji">🚫</span> 약물 및 사이버 중독 예방</h1>
+            </div>
+            <div class="game-stats">
+                <div class="stat-item">
+                    <span class="stat-icon">📋</span>
+                    <span class="stat-value" id="progress">1/5</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-icon">💪</span>
+                    <span class="stat-value" id="correct">0</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-icon">⭐</span>
+                    <span class="stat-value" id="score">0</span>
+                </div>
+            </div>
+        </header>
+
+        <main class="game-content">
+            <div class="game-board">
+                <div class="game-board-header">
+                    <h2 class="game-board-title">🚫 유혹을 거절하는 방법을 배워요!</h2>
+                </div>
+                <div class="game-board-content">
+                    <div class="start-screen" id="startScreen">
+                        <div class="start-emoji">🚫</div>
+                        <h2 class="start-title">거절하기 게임</h2>
+                        <p class="start-description">
+                            담배, 술, 게임 중독 등 다양한 유혹 상황이 나옵니다.<br>
+                            올바르게 거절하는 방법을 선택하세요!
+                        </p>
+                        <button class="start-btn" id="startBtn">게임 시작!</button>
+                    </div>
+
+                    <div class="quiz-container hidden" id="gameArea">
+                        <div class="scenario-card" id="scenarioCard">
+                            <div class="scenario-emoji" id="scenarioEmoji">🚬</div>
+                            <div class="scenario-speaker" id="scenarioSpeaker">친구가 말해요:</div>
+                            <p class="scenario-text" id="scenarioText"></p>
+                        </div>
+                        <div class="response-options" id="options"></div>
+                        <div class="result-explanation hidden" id="explanation"></div>
+                    </div>
+
+                    <div class="game-over-screen" id="gameOverScreen">
+                        <h2 class="game-over-title" id="resultTitle">게임 종료!</h2>
+                        <p class="game-over-score" id="resultScore"></p>
+                        <div class="game-over-stars" id="resultStars"></div>
+                        <div class="game-over-buttons">
+                            <button class="btn btn-primary btn-pixel" onclick="location.reload()">다시하기</button>
+                            <button class="btn btn-gold btn-pixel" onclick="location.href='../index.html'">돌아가기</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="../js/main.js"></script>
+    <script src="../js/chatbot.js"></script>
+    <script src="../js/survey.js"></script>
+    <script>
+        const scenarios = [
+            {
+                emoji: "🚬",
+                speaker: "친구가 말해요:",
+                text: "야, 담배 한 대만 피워봐. 어른들만 피우는 거 아니야. 멋있잖아!",
+                options: [
+                    { text: "그래, 한 번만 해볼게", icon: "😅", correct: false },
+                    { text: "싫어, 담배는 건강에 해로워. 난 안 해", icon: "💪", correct: true },
+                    { text: "음... 좀 더 생각해볼게", icon: "🤔", correct: false },
+                    { text: "부모님한테 물어보고", icon: "😰", correct: false }
+                ],
+                explanation: "담배는 암, 심장병 등 심각한 질병을 일으켜요. '싫어'라고 분명히 말하고, 이유도 함께 말하면 더 좋아요!"
+            },
+            {
+                emoji: "🍺",
+                speaker: "선배가 말해요:",
+                text: "이거 맥주인데, 조금만 마셔봐. 어른 되면 다 마시는 거야.",
+                options: [
+                    { text: "아, 저 미성년자라 술 못 마셔요. 음료수 마실게요!", icon: "🧃", correct: true },
+                    { text: "선배가 주시는 거니까 조금만...", icon: "😓", correct: false },
+                    { text: "부모님 오시면 드세요", icon: "😅", correct: false },
+                    { text: "저도 어른처럼 마셔볼래요", icon: "🤪", correct: false }
+                ],
+                explanation: "미성년자 음주는 불법이에요. 뇌 발달에도 나쁜 영향을 줘요. 당당하게 거절하세요!"
+            },
+            {
+                emoji: "📱",
+                speaker: "게임 친구가 말해요:",
+                text: "야, 오늘 새벽까지 게임하자! 내일 학교 그냥 빠지면 되잖아.",
+                options: [
+                    { text: "그래! 학교보다 게임이 재밌어!", icon: "🎮", correct: false },
+                    { text: "아니, 나 10시까지만 하고 잘 거야. 건강도 챙겨야지!", icon: "😊", correct: true },
+                    { text: "부모님 주무시면 몰래...", icon: "🤫", correct: false },
+                    { text: "어... 그냥 하던 대로 할게", icon: "😐", correct: false }
+                ],
+                explanation: "게임 중독은 학업, 건강, 친구 관계에 모두 나쁜 영향을 줘요. 정해진 시간만 하는 게 중요해요!"
+            },
+            {
+                emoji: "💊",
+                speaker: "모르는 형이 말해요:",
+                text: "이거 먹으면 기분이 진짜 좋아져. 한 알만 먹어봐, 무료야.",
+                options: [
+                    { text: "무료면 하나만...", icon: "🤔", correct: false },
+                    { text: "됐어요! 저 그런 거 안 해요. (빠르게 자리를 피한다)", icon: "🏃", correct: true },
+                    { text: "뭔데요? 설명해주세요", icon: "❓", correct: false },
+                    { text: "친구들한테도 가져다줄게요", icon: "😈", correct: false }
+                ],
+                explanation: "모르는 약물은 절대 먹으면 안 돼요! 마약일 수 있어요. 즉시 자리를 피하고 어른에게 알리세요!"
+            },
+            {
+                emoji: "🌐",
+                speaker: "온라인 친구가 말해요:",
+                text: "너 개인정보 알려줘. 이름, 학교, 전화번호! 우리 더 친해지자~",
+                options: [
+                    { text: "좋아! 우리 친구니까~ (정보를 알려준다)", icon: "📝", correct: false },
+                    { text: "미안, 개인정보는 알려줄 수 없어. 온라인에선 조심해야 해!", icon: "🔒", correct: true },
+                    { text: "학교 이름만 알려줄게", icon: "🏫", correct: false },
+                    { text: "부모님 정보도 줄까?", icon: "👨‍👩‍👧", correct: false }
+                ],
+                explanation: "온라인에서 만난 사람에게 개인정보를 주면 안 돼요. 범죄에 악용될 수 있어요!"
+            }
+        ];
+
+        const state = { current: 0, correct: 0, score: 0, answered: false };
+
+        const el = {
+            startScreen: document.getElementById('startScreen'),
+            gameArea: document.getElementById('gameArea'),
+            scenarioEmoji: document.getElementById('scenarioEmoji'),
+            scenarioSpeaker: document.getElementById('scenarioSpeaker'),
+            scenarioText: document.getElementById('scenarioText'),
+            options: document.getElementById('options'),
+            explanation: document.getElementById('explanation'),
+            progress: document.getElementById('progress'),
+            correct: document.getElementById('correct'),
+            score: document.getElementById('score'),
+            gameOverScreen: document.getElementById('gameOverScreen'),
+            resultTitle: document.getElementById('resultTitle'),
+            resultScore: document.getElementById('resultScore'),
+            resultStars: document.getElementById('resultStars')
+        };
+
+        // Initialize Chatbot immediately so it's visible on start screen
+        const chatbot = new Chatbot('addiction_prevention');
+
+        document.getElementById('startBtn').addEventListener('click', startGame);
+
+        function startGame() {
+            el.startScreen.classList.add('hidden');
+            el.gameArea.classList.remove('hidden');
+            showScenario();
+        }
+
+        function showScenario() {
+            const s = scenarios[state.current];
+            state.answered = false;
+
+            el.scenarioEmoji.textContent = s.emoji;
+            el.scenarioSpeaker.textContent = s.speaker;
+            el.scenarioText.textContent = s.text;
+            el.explanation.classList.add('hidden');
+            el.options.innerHTML = '';
+
+            s.options.forEach((opt, i) => {
+                const btn = document.createElement('button');
+                btn.className = 'response-btn';
+                btn.innerHTML = `<span class="response-icon">${opt.icon}</span><span>${opt.text}</span>`;
+                btn.addEventListener('click', () => selectAnswer(i, opt.correct));
+                el.options.appendChild(btn);
+            });
+
+            updateUI();
+        }
+
+        function selectAnswer(index, isCorrect) {
+            if (state.answered) return;
+            state.answered = true;
+
+            const s = scenarios[state.current];
+            const buttons = el.options.querySelectorAll('.response-btn');
+
+            buttons.forEach((btn, i) => {
+                btn.style.pointerEvents = 'none';
+                if (s.options[i].correct) btn.classList.add('correct');
+                if (i === index && !isCorrect) btn.classList.add('wrong');
+            });
+
+            if (isCorrect) {
+                state.correct++;
+                state.score += 200;
+            }
+
+            el.explanation.innerHTML = `<strong>${isCorrect ? '✅ 정답!' : '❌ 아쉬워요!'}</strong><br>${s.explanation}`;
+            el.explanation.classList.remove('hidden');
+
+            updateUI();
+
+            setTimeout(() => {
+                state.current++;
+                if (state.current < scenarios.length) {
+                    showScenario();
+                } else {
+                    endGame();
+                }
+            }, 3000);
+        }
+
+        function updateUI() {
+            el.progress.textContent = `${state.current + 1}/${scenarios.length}`;
+            el.correct.textContent = state.correct;
+            el.score.textContent = state.score;
+        }
+
+        function endGame() {
+            const stars = state.correct >= 4 ? 3 : 0;
+
+            el.resultTitle.textContent = stars >= 2 ? '🎉 거절왕이 되었어요!' : '💪 연습하면 더 잘할 수 있어요!';
+            el.resultTitle.style.color = stars >= 2 ? '#2ECC71' : '#FCBC00';
+            el.resultScore.textContent = `정답: ${state.correct}/${scenarios.length} | 점수: ${state.score}점`;
+            el.resultStars.textContent = '⭐'.repeat(stars) + '☆'.repeat(3 - stars);
+
+            el.gameOverScreen.classList.add('active');
+
+            if (typeof ProgressManager !== 'undefined') {
+                ProgressManager.completeGame('addiction_prevention', stars);
+            }
+
+            setTimeout(() => {
+                new SurveyModal('addiction_prevention', '약물 및 사이버 중독 예방', () => { });
+                document.querySelector('.modal-overlay').classList.add('active');
+            }, 1500);
+        }
+    </script>
+</body>
+
+</html>

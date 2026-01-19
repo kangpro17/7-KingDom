@@ -1,0 +1,1169 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="7대 안전교육을 게임으로 배우는 교육 플랫폼">
+  <title>7 안전좌의 주인은 누구인가 - 안전교육 게임</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" as="style" crossorigin
+    href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon"
+    href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🏰</text></svg>">
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Pretendard', sans-serif;
+      overflow-x: hidden;
+      min-height: 100vh;
+      /* Restoring Blue Striped Background */
+      background: repeating-linear-gradient(90deg,
+          #5B9BD5 0px,
+          #5B9BD5 40px,
+          #4A8BC7 40px,
+          #4A8BC7 80px);
+    }
+
+    /* Game World - Transparent now as body has the background */
+    .game-world {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+      position: relative;
+    }
+
+    /* Parchment Scroll Container */
+    .parchment-container {
+      position: relative;
+      width: 100%;
+      height: 100%;
+    }
+
+    /* Scroll Ends - Adjusted or Hidden if map covers everything? 
+       Keeping them but map container will be huge */
+    .scroll-end {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 50px;
+      background: linear-gradient(180deg, #F5D98E 0%, #E8C864 50%, #D4B050 100%);
+      z-index: 10;
+      border-radius: 10px;
+    }
+
+    .scroll-end-left {
+      left: -25px;
+      box-shadow: 3px 0 10px rgba(0, 0, 0, 0.2);
+    }
+
+    .scroll-end-right {
+      right: -25px;
+      box-shadow: -3px 0 10px rgba(0, 0, 0, 0.2);
+    }
+
+    /* Main Parchment */
+    .parchment {
+      background: linear-gradient(180deg, #F5E6C8 0%, #EDD9A8 50%, #E5CC8A 100%);
+      border-radius: 10px;
+      padding: 30px 50px 40px;
+      min-height: 600px;
+      position: relative;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    }
+
+    .character {
+      position: absolute;
+      bottom: 50px;
+      cursor: grab;
+      z-index: 20;
+      transition: transform 0.3s ease;
+      /* Default transition for hover */
+    }
+
+    .character.dragging {
+      cursor: grabbing;
+      transition: none !important;
+      /* Force no transition */
+      z-index: 9999;
+      /* Super high z-index */
+      opacity: 0.9;
+      transform: scale(1.1) !important;
+      /* Keep it slightly scaled up, but DO NOT flip */
+    }
+
+    /* Ensure Wizard faces correctly (Right/Center) always unless moved */
+    .character-wizard.dragging {
+      transform: scale(1.1) scaleX(1) !important;
+    }
+
+    /* Ensure Warrior faces correctly */
+    .character-warrior.dragging {
+      transform: scale(1.1) scaleX(1) !important;
+    }
+
+    .character.moving {
+      transition: left 1.5s ease-in-out, top 1.5s ease-in-out, transform 0.3s ease;
+      z-index: 100;
+    }
+
+    .character:active {
+      cursor: grabbing;
+    }
+
+    /* Wave Pattern at Bottom */
+    .wave-pattern {
+      position: absolute;
+      bottom: 20px;
+      left: 40px;
+      right: 40px;
+      height: 30px;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 20px;
+      opacity: 0.4;
+    }
+
+    .wave {
+      font-size: 1.2rem;
+      color: #8B7355;
+    }
+
+    /* Compass Star */
+    .compass-star {
+      position: absolute;
+      top: 20px;
+      left: 40px;
+      font-size: 2.5rem;
+      opacity: 0.6;
+    }
+
+    /* Header */
+    .map-header {
+      text-align: center;
+      margin-bottom: 20px;
+      position: relative;
+      z-index: 5;
+    }
+
+    .map-title {
+      font-size: 2.5rem;
+      /* Increased font size */
+      font-weight: 900;
+      color: #5B4A2A;
+      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+      margin-bottom: 10px;
+    }
+
+    .map-subtitle {
+      font-size: 1.3rem;
+      /* Increased font size */
+      color: #7A6840;
+    }
+
+    /* Progress Display */
+    .progress-box {
+      display: inline-block;
+      background: rgba(91, 74, 42, 0.2);
+      padding: 10px 25px;
+      border-radius: 25px;
+      margin-top: 15px;
+    }
+
+    .progress-text {
+      color: #5B4A2A;
+      font-weight: 700;
+      font-size: 1.1rem;
+    }
+
+    /* Island Path Container */
+    .island-path {
+      position: relative;
+      height: 500px;
+      /* Increased height for bigger islands */
+      margin-top: 30px;
+    }
+
+    /* Map Container - Parchment Style */
+    .map-container {
+      position: relative;
+      width: 95vw;
+      /* Max Width */
+      height: 90vh;
+      /* Max Height */
+      max-width: none;
+      /* Allow full expansion */
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 0 40px;
+      z-index: 10;
+      /* Slightly reduced scale to rely on Dimensions, but keeping some zoom */
+      transform: scale(1.05);
+    }
+
+    /* Scroll Background */
+    .map-scroll {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      background: #f4e4bc;
+      border-radius: 20px;
+      /* Increased radius */
+      box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      overflow: hidden;
+    }
+
+    /* Dotted Path SVG */
+    .path-svg {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+    }
+
+    .dotted-path {
+      fill: none;
+      stroke: #8B7355;
+      stroke-width: 4;
+      /* Thicker path */
+      stroke-dasharray: 12 10;
+      stroke-linecap: round;
+    }
+
+    /* Floating Island */
+    .floating-island {
+      position: absolute;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      cursor: pointer;
+      transition: transform 0.3s ease;
+      z-index: 5;
+    }
+
+    .floating-island:hover {
+      transform: translateY(-15px) scale(1.1);
+      /* Enhanced hover */
+    }
+
+    .floating-island.locked {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .floating-island.locked:hover {
+      transform: none;
+    }
+
+    .island-graphic {
+      width: 150px;
+      /* Increased from 100px (1.5x) */
+      height: 150px;
+      /* Increased from 100px (1.5x) */
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+
+    /* Island Types */
+    .island-forest {
+      background: linear-gradient(180deg, #4CAF50 0%, #2E7D32 60%, #8D6E63 60%, #6D4C41 100%);
+      border-radius: 50% 50% 40% 40%;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    }
+
+    .island-forest::before {
+      content: '⚡🏠🔪';
+      font-size: 2.5rem;
+      /* Increased Icon Size */
+    }
+
+    .island-ice {
+      background: linear-gradient(180deg, #B3E5FC 0%, #4FC3F7 60%, #81D4FA 60%, #29B6F6 100%);
+      border-radius: 50% 50% 40% 40%;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    }
+
+    .island-ice::before {
+      content: '🚦🚸🚗';
+      font-size: 1.8rem;
+    }
+
+    .island-volcano {
+      background: linear-gradient(180deg, #D84315 0%, #BF360C 50%, #5D4037 50%, #3E2723 100%);
+      border-radius: 50% 50% 40% 40%;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    }
+
+    .island-volcano::before {
+      content: '💔🤬👊';
+      font-size: 1.8rem;
+    }
+
+    .island-crystal {
+      background: linear-gradient(180deg, #CE93D8 0%, #9C27B0 60%, #6D4C41 60%, #4E342E 100%);
+      border-radius: 50% 50% 40% 40%;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    }
+
+    .island-crystal::before {
+      content: '💊🚬📱';
+      font-size: 1.8rem;
+    }
+
+    .island-underwater {
+      background: linear-gradient(180deg, #26C6DA 0%, #00ACC1 60%, #006064 60%, #004D40 100%);
+      border-radius: 50% 50% 40% 40%;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    }
+
+    .island-underwater::before {
+      content: '🌊🔥🏃';
+      font-size: 1.8rem;
+    }
+
+    .island-dungeon {
+      background: linear-gradient(180deg, #78909C 0%, #546E7A 60%, #37474F 60%, #263238 100%);
+      border-radius: 50% 50% 40% 40%;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    }
+
+    .island-dungeon::before {
+      content: '⛑️🥽🥾';
+      font-size: 1.8rem;
+    }
+
+    .island-desert {
+      background: linear-gradient(180deg, #FFCC80 0%, #FF9800 60%, #8D6E63 60%, #5D4037 100%);
+      border-radius: 50% 50% 40% 40%;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    }
+
+    .island-desert::before {
+      content: '❤️🏥💉';
+      font-size: 1.8rem;
+    }
+
+    /* Completed Island */
+    .floating-island.completed .island-graphic {
+      box-shadow: 0 0 20px #FFD700;
+    }
+
+    .floating-island.completed::after {
+      content: '⭐';
+      position: absolute;
+      top: -15px;
+      right: 10px;
+      font-size: 1.8rem;
+      animation: starPulse 2s infinite;
+    }
+
+    @keyframes starPulse {
+
+      0%,
+      100% {
+        transform: scale(1);
+      }
+
+      50% {
+        transform: scale(1.2);
+      }
+    }
+
+    /* Stage Label */
+    .stage-label {
+      margin-top: 10px;
+      text-align: center;
+    }
+
+    .stage-number {
+      font-size: 0.75rem;
+      color: #8B7355;
+      font-weight: 600;
+    }
+
+    .stage-name {
+      font-size: 1rem;
+      font-weight: 800;
+      color: #5B4A2A;
+      text-shadow: 1px 1px 2px rgba(255, 255, 255, 0.5);
+    }
+
+    /* Island Positions */
+    .island-1 {
+      left: 3%;
+      top: 35%;
+    }
+
+    .island-2 {
+      left: 17%;
+      top: 15%;
+    }
+
+    .island-3 {
+      left: 33%;
+      top: 40%;
+    }
+
+    .island-4 {
+      left: 48%;
+      top: 10%;
+    }
+
+    .island-5 {
+      left: 58%;
+      top: 45%;
+    }
+
+    .island-6 {
+      left: 72%;
+      top: 15%;
+    }
+
+    .island-7 {
+      left: 90%;
+      top: 48%;
+    }
+
+    /* Warrior on Map - Moves with progress */
+    .warrior-on-map {
+      position: absolute;
+      z-index: 20;
+      transition: all 0.8s ease;
+      pointer-events: none;
+    }
+
+    .warrior-on-map img {
+      width: 70px;
+      height: auto;
+      filter: drop-shadow(3px 3px 5px rgba(0, 0, 0, 0.5));
+      animation: warriorBounce 1s ease-in-out infinite;
+    }
+
+    @keyframes warriorBounce {
+
+      0%,
+      100% {
+        transform: translateY(0);
+      }
+
+      50% {
+        transform: translateY(-8px);
+      }
+    }
+
+    /* Characters - Fixed at bottom, facing center */
+    .character {
+      position: fixed;
+      bottom: 30px;
+      z-index: 100;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      cursor: pointer;
+      transition: transform 0.3s;
+    }
+
+    .character:hover {
+      transform: scale(1.1);
+    }
+
+    .character img {
+      width: 160px;
+      /* 2x size */
+      height: auto;
+      filter: drop-shadow(3px 3px 5px rgba(0, 0, 0, 0.4));
+    }
+
+    .character-wizard {
+      left: 30px;
+    }
+
+    .character-wizard img {
+      transform: scaleX(-1);
+      /* Flipped as requested (Face Left/Center) */
+    }
+
+    .character-warrior {
+      left: 200px;
+      /* Positioned next to Wizard */
+    }
+
+    .character-warrior img {
+      transform: scaleX(1);
+      /* Facing Right (default) or check orientation */
+    }
+
+    /* Speech Bubble - positioned to not overlap */
+    .character-speech {
+      position: absolute;
+      bottom: 100%;
+      margin-bottom: 15px;
+      background: #fff;
+      padding: 10px 16px;
+      border-radius: 18px;
+      border: 3px solid #5B4A2A;
+      font-size: 0.9rem;
+      font-weight: 600;
+      white-space: nowrap;
+      opacity: 0;
+      transform: translateY(5px);
+      transition: all 0.3s;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    }
+
+    .character-speech::after {
+      content: '';
+      position: absolute;
+      top: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      border-left: 10px solid transparent;
+      border-right: 10px solid transparent;
+      border-top: 10px solid #fff;
+    }
+
+    .character-speech::before {
+      content: '';
+      position: absolute;
+      top: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      border-left: 13px solid transparent;
+      border-right: 13px solid transparent;
+      border-top: 13px solid #5B4A2A;
+      margin-top: 3px;
+    }
+
+    .character:hover .character-speech {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* Victory Overlay */
+    .victory-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.85);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 999;
+      flex-direction: column;
+    }
+
+    .victory-overlay.active {
+      display: flex;
+    }
+
+    .victory-title {
+      font-size: 3.5rem;
+      color: #FFD700;
+      text-shadow: 0 0 30px #FFD700;
+      animation: victoryPulse 1s infinite;
+      margin-bottom: 20px;
+    }
+
+    @keyframes victoryPulse {
+
+      0%,
+      100% {
+        transform: scale(1);
+      }
+
+      50% {
+        transform: scale(1.1);
+      }
+    }
+
+    .victory-subtitle {
+      font-size: 1.8rem;
+      color: #fff;
+      margin-bottom: 30px;
+    }
+
+    .victory-btn {
+      padding: 18px 45px;
+      font-size: 1.3rem;
+      font-weight: 700;
+      background: linear-gradient(180deg, #4CAF50 0%, #2E7D32 100%);
+      color: #fff;
+      border: none;
+      border-radius: 30px;
+      cursor: pointer;
+      box-shadow: 0 6px 0 #1B5E20;
+      transition: all 0.2s;
+    }
+
+    .victory-btn:hover {
+      transform: translateY(-3px);
+    }
+
+    /* Call to Action Button */
+    .cta-button {
+      position: fixed;
+      bottom: 40px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: linear-gradient(180deg, #FFD700 0%, #FFA500 100%);
+      color: #5B4A2A;
+      font-size: 1.5rem;
+      font-weight: 900;
+      padding: 15px 40px;
+      border-radius: 50px;
+      border: 4px solid #FFFFFF;
+      box-shadow: 0 8px 0 #D35400, 0 15px 20px rgba(0, 0, 0, 0.4);
+      z-index: 1000;
+      text-shadow: 1px 1px 0 rgba(255, 255, 255, 0.5);
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+      white-space: nowrap;
+    }
+
+    .cta-button:hover {
+      transform: translateX(-50%) translateY(4px);
+      box-shadow: 0 4px 0 #D35400, 0 8px 10px rgba(0, 0, 0, 0.4);
+    }
+
+    .cta-button:active {
+      transform: translateX(-50%) translateY(8px);
+      box-shadow: none;
+    }
+
+    /* Fireworks */
+    .fireworks-container {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 999;
+      display: none;
+    }
+
+    .fireworks-container.active {
+      display: block;
+    }
+
+    .firework-particle {
+      position: absolute;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      animation: particleFly 1.5s ease-out forwards;
+    }
+
+    @keyframes particleFly {
+      0% {
+        transform: translate(0, 0) scale(1);
+        opacity: 1;
+      }
+
+      100% {
+        transform: translate(var(--tx), var(--ty)) scale(0);
+        opacity: 0;
+      }
+    }
+
+    /* Responsive */
+    @media (max-width: 900px) {
+      .parchment {
+        padding: 20px 40px 30px;
+      }
+
+      .island-graphic {
+        width: 80px;
+        height: 80px;
+      }
+
+      .stage-name {
+        font-size: 0.85rem;
+      }
+
+      .wizard-guide img {
+        width: 120px;
+      }
+    }
+
+    @media (max-width: 600px) {
+      .map-title {
+        font-size: 1.5rem;
+      }
+
+      .wizard-guide img {
+        width: 100px;
+      }
+
+      .warrior-on-map img {
+        width: 50px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="game-world">
+    <!-- Parchment Container -->
+    <div class="parchment-container">
+      <div class="scroll-end scroll-end-left"></div>
+      <div class="scroll-end scroll-end-right"></div>
+
+      <div class="parchment">
+        <!-- Compass Star -->
+        <div class="compass-star">✦ 강정한</div>
+
+        <!-- Header -->
+        <header class="map-header">
+          <h1 class="map-title">🏰 7 안전좌의 주인은 누구인가</h1>
+          <p class="map-subtitle">7개의 섬을 모험하며 안전 마스터가 되자!</p>
+          <div class="progress-box">
+            <span class="progress-text" id="progressText">0/7 미션 완료</span>
+          </div>
+        </header>
+
+        <!-- Island Path -->
+        <div class="island-path" id="islandPath">
+          <!-- SVG Path -->
+          <svg class="path-svg" viewBox="0 0 1000 350" preserveAspectRatio="none">
+            <path class="dotted-path"
+              d="M50,180 Q150,80 200,100 T350,200 Q450,50 500,80 T650,220 Q750,80 800,100 T950,190" />
+          </svg>
+
+          <!-- Islands -->
+          <div class="floating-island island-1" data-index="0" id="island0">
+            <div class="island-graphic island-forest"></div>
+            <div class="stage-label">
+              <div class="stage-number">Stage 1</div>
+              <div class="stage-name">생활안전</div>
+            </div>
+          </div>
+
+          <div class="floating-island island-2" data-index="1" id="island1">
+            <div class="island-graphic island-ice"></div>
+            <div class="stage-label">
+              <div class="stage-number">Stage 2</div>
+              <div class="stage-name">교통안전</div>
+            </div>
+          </div>
+
+          <div class="floating-island island-3" data-index="2" id="island2">
+            <div class="island-graphic island-volcano"></div>
+            <div class="stage-label">
+              <div class="stage-number">Stage 3</div>
+              <div class="stage-name">폭력예방</div>
+            </div>
+          </div>
+
+          <div class="floating-island island-4" data-index="3" id="island3">
+            <div class="island-graphic island-crystal"></div>
+            <div class="stage-label">
+              <div class="stage-number">Stage 4</div>
+              <div class="stage-name">중독예방</div>
+            </div>
+          </div>
+
+          <div class="floating-island island-5" data-index="4" id="island4">
+            <div class="island-graphic island-underwater"></div>
+            <div class="stage-label">
+              <div class="stage-number">Stage 5</div>
+              <div class="stage-name">재난안전</div>
+            </div>
+          </div>
+
+          <div class="floating-island island-6" data-index="5" id="island5">
+            <div class="island-graphic island-dungeon"></div>
+            <div class="stage-label">
+              <div class="stage-number">Stage 6</div>
+              <div class="stage-name">직업안전</div>
+            </div>
+          </div>
+
+          <div class="floating-island island-7" data-index="6" id="island6">
+            <div class="island-graphic island-desert"></div>
+            <div class="stage-label">
+              <div class="stage-number">Stage 7</div>
+              <div class="stage-name">응급처치</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Wave Pattern -->
+        <div class="wave-pattern">
+          <span class="wave">〰</span><span class="wave">〰</span><span class="wave">〰</span>
+          <span class="wave">〰</span><span class="wave">〰</span><span class="wave">〰</span>
+          <span class="wave">〰</span><span class="wave">〰</span><span class="wave">〰</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Characters - Fixed, Facing Center -->
+    <div class="character character-wizard" onclick="showCharacterHelp('wizard')">
+      <div class="character-speech">강정한쌤, 안전한거 맞아요?</div>
+      <img src="images/wizard.png" alt="마법사">
+    </div>
+    <div class="character character-warrior" onclick="showCharacterHelp('warrior')">
+      <div class="character-speech">함께 떠나보시죠 교수님!</div>
+      <img src="images/warrior.png" alt="용사">
+    </div>
+
+    <!-- Victory Overlay -->
+    <div class="victory-overlay" id="victoryOverlay">
+      <h1 class="victory-title">🎉 축하합니다! 🎉</h1>
+      <p class="victory-subtitle">모든 안전교육 미션을 완료했습니다!</p>
+      <button class="victory-btn" onclick="location.reload()">다시 도전하기</button>
+    </div>
+
+    <!-- Call to Action Button -->
+    <div class="cta-button">
+      캐릭터를 미션 섬으로 드래그하여 도전하세요!
+    </div>
+
+    <!-- Fireworks -->
+    <div class="fireworks-container" id="fireworksContainer"></div>
+  </div>
+
+  <script>
+    const missions = [
+      { id: 'life_safety', file: 'games/life-safety.html' },
+      { id: 'traffic_safety', file: 'games/traffic-safety.html' },
+      { id: 'violence_prevention', file: 'games/violence-prevention.html' },
+      { id: 'addiction_prevention', file: 'games/addiction-prevention.html' },
+      { id: 'disaster_safety', file: 'games/disaster-safety.html' },
+      { id: 'occupational_safety', file: 'games/occupational-safety.html' },
+      { id: 'first_aid', file: 'games/first-aid.html' }
+    ];
+
+    const ProgressManager = {
+      STORAGE_KEY: 'safety_game_progress',
+      getProgress() {
+        const data = sessionStorage.getItem(this.STORAGE_KEY);
+        return data ? JSON.parse(data) : { completedGames: [], stars: {}, totalStars: 0 };
+      },
+      isCompleted(gameId) {
+        return this.getProgress().completedGames.includes(gameId);
+      },
+      getCompletedCount() {
+        return this.getProgress().completedGames.length;
+      },
+      getCurrentStage() {
+        // Return the index of the next uncompleted stage
+        for (let i = 0; i < missions.length; i++) {
+          if (!this.isCompleted(missions[i].id)) {
+            return i;
+          }
+        }
+        return missions.length; // All completed
+      },
+      // Force clean start for legacy data
+      checkLegacy() {
+        const key = 'progress_cleaned_v1';
+        if (!localStorage.getItem(key)) {
+          localStorage.removeItem(this.STORAGE_KEY);
+          localStorage.setItem(key, 'true');
+        }
+      }
+    };
+
+    function init() {
+      updateIslands();
+      updateProgress();
+      checkVictory();
+      initCharacterInteraction();
+    }
+
+    // ==========================================
+    // Character Interaction (Drag & Drop + Travel)
+    // ==========================================
+
+    let isDragging = false;
+    let hasMoved = false;
+    let activeChar = null;
+    let dragOffset = { x: 0, y: 0 };
+    // MAP_SCALE unused for global drag reference
+
+    function initCharacterInteraction() {
+      const chars = document.querySelectorAll('.character');
+
+      chars.forEach(char => {
+        // Remove inline click to prevent conflict (handled here)
+        char.removeAttribute('onclick');
+
+        char.addEventListener('mousedown', startDrag);
+        // Add click handler that checks if we dragged
+        char.addEventListener('click', (e) => {
+          if (!hasMoved) {
+            const type = char.classList.contains('character-wizard') ? 'wizard' : 'warrior';
+            showCharacterHelp(type);
+          }
+        });
+      });
+
+      document.addEventListener('mousemove', drag);
+      document.addEventListener('mouseup', endDrag);
+
+      // Prevent default drag behavior of images
+      document.querySelectorAll('.character img').forEach(img => {
+        img.addEventListener('dragstart', e => e.preventDefault());
+      });
+    }
+
+    function startDrag(e) {
+      if (e.target.closest('.character')) {
+        isDragging = true;
+        hasMoved = false; // Reset move flag
+        activeChar = e.target.closest('.character');
+
+        // Calculate offset relative to character top-left
+        const charRect = activeChar.getBoundingClientRect();
+        dragOffset.x = e.clientX - charRect.left;
+        dragOffset.y = e.clientY - charRect.top;
+
+        // Don't add .dragging immediately to allow simple clicks
+        // We will add it on first move
+      }
+    }
+
+    function drag(e) {
+      if (!isDragging || !activeChar) return;
+      e.preventDefault();
+
+      if (!hasMoved) {
+        hasMoved = true;
+        activeChar.classList.add('dragging');
+      }
+
+      // Simple Global Drag: Match Mouse Position minus Offset
+      // Since characters are absolute/fixed relative to body/game-world (unscaled parent)
+      const x = e.clientX - dragOffset.x;
+      const y = e.clientY - dragOffset.y;
+
+      activeChar.style.left = `${x}px`;
+      activeChar.style.top = `${y}px`;
+      activeChar.style.bottom = 'auto';
+      activeChar.style.right = 'auto';
+    }
+
+    function endDrag(e) {
+      if (!isDragging || !activeChar) return;
+
+      isDragging = false;
+      activeChar.classList.remove('dragging');
+
+      if (!hasMoved) {
+        activeChar = null;
+        return; // Was just a click
+      }
+
+      // Check collision with islands (Distance Based)
+      const charRect = activeChar.getBoundingClientRect();
+      const charCenterX = charRect.left + charRect.width / 2;
+      const charCenterY = charRect.top + charRect.height / 2;
+
+      const islands = document.querySelectorAll('.floating-island');
+      let hitMission = null;
+
+      islands.forEach((island, index) => {
+        // Target the graphic specifically for better center feel
+        const graphic = island.querySelector('.island-graphic');
+        const targetRect = graphic ? graphic.getBoundingClientRect() : island.getBoundingClientRect();
+
+        const islandCenterX = targetRect.left + targetRect.width / 2;
+        const islandCenterY = targetRect.top + targetRect.height / 2;
+
+        // Calculate distance
+        const dist = Math.hypot(charCenterX - islandCenterX, charCenterY - islandCenterY);
+
+        // Threshold: 130px allows "Touching" detection (Visual Radius ~75 + Char Radius ~40 = 115)
+        // 130 is generous enough to catch "near center" drops
+        if (dist < 130) {
+          hitMission = missions[index];
+        }
+      });
+
+      if (hitMission) {
+        goToMission(hitMission.file);
+      } else {
+        // Reset position (snap back)
+        activeChar.style.left = '';
+        activeChar.style.top = '';
+        activeChar.style.bottom = ''; // Revert to CSS default
+        activeChar.style.right = '';
+      }
+      activeChar = null;
+    }
+
+    function isOverlap(rect1, rect2) {
+      return !(rect1.right < rect2.left ||
+        rect1.left > rect2.right ||
+        rect1.bottom < rect2.top ||
+        rect1.top > rect2.bottom);
+    }
+
+    // Updated Click Handler (Travel Animation)
+    function updateIslands() {
+      const currentStage = ProgressManager.getCurrentStage();
+
+      missions.forEach((mission, index) => {
+        const element = document.getElementById('island' + index);
+        const isCompleted = ProgressManager.isCompleted(mission.id);
+
+        // Ensure clean state
+        element.classList.remove('locked');
+        element.classList.remove('completed');
+
+        // Use animation instead of direct link
+        element.onclick = (e) => {
+          e.preventDefault(); // Stop immediate navigation if it was a link (it's div but good practice)
+          travelAndStart(element, mission.file);
+        };
+
+        if (isCompleted) {
+          element.classList.add('completed');
+        }
+      });
+    }
+
+    function travelAndStart(targetElement, url) {
+      // Use Wizard by default, or the one closest? Let's use Wizard.
+      const char = document.querySelector('.character-wizard');
+      const mapContainer = document.querySelector('.map-container');
+
+      // Get coordinates relative to map container
+      // Since both are inside map-container (roughly), we can use offsetLeft/Top if they are siblings.
+      // But islands are properly positioned absolute.
+      // Let's use rects to be safe.
+
+      const mapRect = mapContainer.getBoundingClientRect();
+      const targetRect = targetElement.getBoundingClientRect();
+
+      // Target center
+      const targetX = (targetRect.left - mapRect.left + targetRect.width / 2) / MAP_SCALE;
+      const targetY = (targetRect.top - mapRect.top + targetRect.height / 2) / MAP_SCALE;
+
+      // Character center offset (approx 80px width/height center)
+      const charW = 80;
+      const charH = 80;
+
+      // Apply movement
+      char.classList.add('moving');
+      char.style.left = `${targetX - charW}px`;
+      char.style.top = `${targetY - charH}px`;
+      char.style.bottom = 'auto'; // Remove sticking to bottom
+
+      // Flip character based on direction
+      const charRect = char.getBoundingClientRect();
+      if (targetRect.left < charRect.left) {
+        // Moving Left
+        char.querySelector('img').style.transform = 'scaleX(-1)';
+      } else {
+        // Moving Right
+        char.querySelector('img').style.transform = 'scaleX(1)';
+      }
+
+      // Wait for animation then go
+      setTimeout(() => {
+        goToMission(url);
+      }, 1500); // 1.5s duration
+    }
+
+    function goToMission(file) {
+      location.href = file;
+    }
+
+    function updateProgress() {
+      const completed = ProgressManager.getCompletedCount();
+      document.getElementById('progressText').textContent = `${completed}/7 미션 완료`;
+    }
+
+    function checkVictory() {
+      if (ProgressManager.getCompletedCount() >= 7) {
+        setTimeout(() => {
+          showVictory();
+        }, 500);
+      }
+    }
+
+    function showVictory() {
+      document.getElementById('victoryOverlay').classList.add('active');
+      document.getElementById('fireworksContainer').classList.add('active');
+      launchFireworks();
+    }
+
+    function launchFireworks() {
+      const container = document.getElementById('fireworksContainer');
+      const colors = ['#FF5252', '#FF4081', '#E040FB', '#7C4DFF', '#448AFF', '#18FFFF', '#69F0AE', '#EEFF41', '#FFD740', '#FF6E40'];
+
+      function createFirework() {
+        const x = Math.random() * window.innerWidth;
+        const y = Math.random() * window.innerHeight * 0.6;
+        const color = colors[Math.floor(Math.random() * colors.length)];
+
+        for (let i = 0; i < 30; i++) {
+          const particle = document.createElement('div');
+          particle.className = 'firework-particle';
+          particle.style.left = x + 'px';
+          particle.style.top = y + 'px';
+          particle.style.background = color;
+          particle.style.boxShadow = `0 0 10px ${color}`;
+
+          const angle = (i / 30) * Math.PI * 2;
+          const distance = 50 + Math.random() * 100;
+          particle.style.setProperty('--tx', Math.cos(angle) * distance + 'px');
+          particle.style.setProperty('--ty', Math.sin(angle) * distance + 'px');
+
+          container.appendChild(particle);
+          setTimeout(() => particle.remove(), 1500);
+        }
+      }
+
+      for (let i = 0; i < 10; i++) {
+        setTimeout(createFirework, i * 300);
+      }
+      setInterval(createFirework, 500);
+    }
+
+    function showWizardHelp() {
+      const currentStage = ProgressManager.getCurrentStage();
+      const stageNames = ['생활안전', '교통안전', '폭력예방', '중독예방', '재난안전', '직업안전', '응급처치'];
+
+      if (currentStage >= missions.length) {
+        alert('🧙‍♂️ 안전 마법사: 축하해! 모든 미션을 완료했어! 넌 진정한 안전 마스터야! 🏆');
+      } else {
+        alert(`🧙‍♂️ 안전 마법사: 다음 목표는 "${stageNames[currentStage]}" 섬이야! 용사를 따라가서 미션을 완료해봐! 💪`);
+      }
+    }
+
+    init();
+
+    // Register Service Worker for Offline Capability
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('service-worker.js')
+          .then(req => console.log('Service Worker Registered'))
+          .catch(err => console.log('Service Worker failed', err));
+      });
+    }
+  </script>
+</body>
+
+</html>

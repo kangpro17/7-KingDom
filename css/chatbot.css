@@ -1,0 +1,404 @@
+/* ===================================================
+   Chatbot Styles - Fixed Position with Character Images
+   =================================================== */
+
+/* Fixed Character Container */
+.chatbot-character {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    left: auto;
+    /* Reset left */
+    z-index: 100;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    transform: none;
+    /* Reset center transform */
+}
+
+@media (max-width: 1300px) {
+    .chatbot-character {
+        left: 20px;
+        bottom: 20px;
+        transform: none;
+    }
+}
+
+/* Hover Effect - Smooth Float */
+.chatbot-character:hover {
+    transform: translateY(-10px);
+    /* Smooth float up */
+    transition: transform 0.3s ease-in-out;
+}
+
+.character-image {
+    width: 160px;
+    /* 2x size as requested previously */
+    height: auto;
+    filter: drop_shadow(3px 3px 5px rgba(0, 0, 0, 0.4));
+    transition: transform 0.3s ease;
+    transform: scaleX(-1);
+    /* Face Left (Center) since on Right */
+}
+
+.chatbot-character:hover .character-image {
+    transform: scaleX(-1);
+    /* Maintain flip on hover */
+    /* translateY is handled by parent hover */
+}
+
+.character-name {
+    margin-top: 5px;
+    background: rgba(0, 0, 0, 0.7);
+    color: #fff;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: bold;
+    text-shadow: 1px 1px 2px #000;
+    display: none;
+    /* Hide name for cleaner look or keep? User didn't say. Keeping hidden or small. */
+}
+
+/* Speech Bubble */
+.chatbot-speech-bubble {
+    position: absolute;
+    bottom: 100%;
+    /* Above character */
+    right: 10px;
+    /* Aligned to right with slight offset */
+    left: auto;
+    background: #fff;
+    padding: 12px 18px;
+    border-radius: 20px;
+    border: 3px solid #5B4A2A;
+    font-family: 'Pretendard', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #333;
+    white-space: nowrap;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(10px);
+    transition: all 0.3s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+    margin-bottom: 15px;
+    z-index: 101;
+}
+
+.chatbot-speech-bubble::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    right: 30px;
+    /* Tail on right side */
+    border-left: 10px solid transparent;
+    border-right: 10px solid transparent;
+    border-top: 10px solid #fff;
+}
+
+.chatbot-speech-bubble::before {
+    content: '';
+    position: absolute;
+    bottom: -16px;
+    left: 28px;
+    border-left: 14px solid transparent;
+    border-right: 14px solid transparent;
+    border-top: 14px solid #333;
+}
+
+.chatbot-speech-bubble.show {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+    animation: bubbleBounce 0.5s ease;
+}
+
+@keyframes bubbleBounce {
+    0% {
+        transform: scale(0.5) translateY(10px);
+    }
+
+    50% {
+        transform: scale(1.1) translateY(-5px);
+    }
+
+    100% {
+        transform: scale(1) translateY(0);
+    }
+}
+
+/* Chat Window Container */
+.chatbot-container {
+    /* This container is now redundant for positioning as the window is fixed */
+    /* Keeping it for structural integrity if needed, but removing positioning */
+    /* If the chatbot-window is a direct child of body, this can be removed */
+    z-index: 1000;
+    /* Keep z-index if it wraps the window */
+}
+
+/* Chat Window */
+.chatbot-window {
+    position: fixed;
+    top: 80px;
+    /* Top Right position */
+    right: 30px;
+    bottom: auto;
+    width: 320px;
+    background: #fff;
+    border-radius: 20px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border: 4px solid #5B4A2A;
+    z-index: 1000;
+    font-family: 'Pretendard', sans-serif;
+    animation: slideIn 0.3s ease;
+    max-height: 520px;
+    /* Retained from original .chatbot-window */
+}
+
+.chatbot-header {
+    background: linear-gradient(180deg, #4CAF50 0%, #2E7D32 100%);
+    padding: 15px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border-bottom: 3px solid #1B5E20;
+}
+
+.chatbot-avatar {
+    width: 50px;
+    height: 50px;
+    background: #fff;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 3px solid #FFD700;
+    overflow: hidden;
+}
+
+.chatbot-avatar img {
+    width: 45px;
+    height: auto;
+}
+
+.chatbot-info {
+    flex: 1;
+}
+
+.chatbot-name {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #fff;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.chatbot-status {
+    font-size: 0.85rem;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.chatbot-close {
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    color: #fff;
+    font-size: 1.5rem;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.chatbot-close:hover {
+    background: rgba(255, 255, 255, 0.4);
+    transform: scale(1.1);
+}
+
+.chatbot-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 15px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    max-height: 280px;
+    background: #f5f5f5;
+}
+
+.chat-message {
+    display: flex;
+    gap: 10px;
+    animation: messageSlide 0.3s ease;
+}
+
+@keyframes messageSlide {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.chat-message.bot {
+    flex-direction: row;
+}
+
+.chat-message.user {
+    flex-direction: row-reverse;
+}
+
+.message-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.3rem;
+    flex-shrink: 0;
+    background: #fff;
+    border: 2px solid #ddd;
+    overflow: hidden;
+}
+
+.message-avatar img {
+    width: 35px;
+    height: auto;
+}
+
+.chat-message.user .message-avatar {
+    background: #E3F2FD;
+    border-color: #2196F3;
+}
+
+.message-bubble {
+    max-width: 75%;
+    padding: 12px 16px;
+    border-radius: 18px;
+    font-size: 0.95rem;
+    line-height: 1.5;
+}
+
+.chat-message.bot .message-bubble {
+    background: #fff;
+    border: 2px solid #e0e0e0;
+    border-bottom-left-radius: 4px;
+}
+
+.chat-message.user .message-bubble {
+    background: linear-gradient(180deg, #4CAF50 0%, #388E3C 100%);
+    color: #fff;
+    border-bottom-right-radius: 4px;
+}
+
+.typing-indicator {
+    display: flex;
+    gap: 5px;
+    padding: 5px;
+}
+
+.typing-dot {
+    width: 10px;
+    height: 10px;
+    background: #888;
+    border-radius: 50%;
+    animation: typingBounce 1s ease-in-out infinite;
+}
+
+.typing-dot:nth-child(2) {
+    animation-delay: 0.2s;
+}
+
+.typing-dot:nth-child(3) {
+    animation-delay: 0.4s;
+}
+
+@keyframes typingBounce {
+
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-8px);
+    }
+}
+
+.chatbot-options {
+    padding: 15px;
+    border-top: 2px solid #e0e0e0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    background: #fff;
+}
+
+.chat-option-btn {
+    padding: 12px 18px;
+    background: linear-gradient(180deg, #FFC107 0%, #FF9800 100%);
+    border: 3px solid #E65100;
+    border-radius: 25px;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 0 #BF360C;
+    text-align: left;
+    color: #333;
+}
+
+.chat-option-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 7px 0 #BF360C;
+}
+
+.chat-option-btn:active {
+    transform: translateY(2px);
+    box-shadow: 0 2px 0 #BF360C;
+}
+
+.chat-option-btn .option-icon {
+    margin-right: 10px;
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+    .chatbot-window {
+        width: calc(100vw - 40px);
+        left: 20px;
+        right: 20px;
+    }
+
+    .chatbot-container {
+        left: 20px;
+        right: 20px;
+    }
+
+    .chatbot-character {
+        bottom: 15px;
+        left: 15px;
+    }
+
+    .character-image {
+        width: 70px;
+    }
+
+    .chatbot-speech-bubble {
+        font-size: 0.85rem;
+        padding: 10px 14px;
+    }
+}
